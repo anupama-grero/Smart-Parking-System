@@ -85,6 +85,16 @@ This system provides real-time parking slot monitoring and automated access cont
 
 ---
 
+
+## 👥 Team & Contributions
+Group Leader: System Architecture, Hardware Integration & Task Delegation
+
+Embedded Sub-Team: Breadboard assembly, shared-trigger calibration & ESP32 firmware
+
+Software Sub-Team: Spring Boot MVC development, MySQL setup & Thymeleaf UI design
+
+---
+
 ## 💻 Tech Stack
 * **Firmware:** C++ / Arduino IDE (`ESP32Servo`, `Adafruit_SSD1306`, `ArduinoJson`)
 * **Backend:** Java 17+, Spring Boot (Spring MVC, Spring Data JPA)
@@ -111,9 +121,3 @@ This system provides real-time parking slot monitoring and automated access cont
 └── docs/
     ├── schematics/              # Circuit schematics and pin mappings
     └── images/                  # Prototype design and screenshots
-👥 Team & Contributions
-Group Leader: System Architecture, Hardware Integration & Task Delegation
-
-Embedded Sub-Team: Breadboard assembly, shared-trigger calibration & ESP32 firmware
-
-Software Sub-Team: Spring Boot MVC development, MySQL setup & Thymeleaf UI design

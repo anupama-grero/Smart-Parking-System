@@ -17,7 +17,8 @@
     <!-- Team Custom Stylesheet -->
     <!-- Your teammate will create this file -->
     <link rel="stylesheet"
-          th:href="@{/css/parking-dashboard.css}">
+            th:href="@{/css/dashboard.css}">
+
 </head>
 
 <body>
@@ -87,7 +88,7 @@
                             <div id="available-count"
                                  class="display-4 fw-bold">
 
-                                5
+                                0
 
                             </div>
 
@@ -121,7 +122,7 @@
                             <div id="occupied-count"
                                  class="display-4 fw-bold">
 
-                                3
+                                0
 
                             </div>
 
@@ -388,7 +389,7 @@
                             </h3>
 
                             <span id="slot-7-status"
-                                  class="slot-status status-badge status-occupied badge">
+                                  class="slot-status status-occupied badge">
 
                                 Occupied
 
@@ -459,6 +460,95 @@
 <!-- Bootstrap JavaScript -->
 <script
         src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+</script>
+
+<!-- =========================================================
+     REAL-TIME PARKING STATUS POLLING SCRIPT
+     ========================================================= -->
+<script>
+    // Initialize polling once the DOM content is fully loaded
+    document.addEventListener("DOMContentLoaded", () => {
+        // Fetch parking status immediately on page load
+        fetchParkingStatus();
+
+        // Poll the server every 5 seconds (5000ms) for status updates
+        setInterval(fetchParkingStatus, 5000);
+    });
+
+    /**
+     * Fetches current parking status from the API endpoint.
+     */
+    async function fetchParkingStatus() {
+        try {
+            const response = await fetch('/api/parking/status', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP Error Status: ${response.status}`);
+            }
+
+            const slotsData = await response.json();
+
+            // Update the UI with fetched data
+            updateDashboardUI(slotsData);
+
+        } catch (error) {
+            console.error("Failed to update parking status:", error);
+        }
+    }
+
+    /**
+     * Updates individual slot badges and total counts in the UI.
+     * @param {Array} slots - Array of parking slot objects from the backend.
+     */
+    function updateDashboardUI(slots) {
+        let availableCount = 0;
+        let occupiedCount = 0;
+
+        slots.forEach(slot => {
+            // Handle multiple naming conventions from backend (camelCase / snake_case)
+            const slotId = slot.slotId ?? slot.slot_id ?? slot.id;
+            const isOccupied = slot.isOccupied ?? slot.is_occupied ?? false;
+
+            // Calculate total available and occupied counts
+            if (isOccupied) {
+                occupiedCount++;
+            } else {
+                availableCount++;
+            }
+
+            // Locate target DOM element by existing ID
+            const statusBadge = document.getElementById(`slot-${slotId}-status`);
+
+            if (statusBadge) {
+                if (isOccupied) {
+                    statusBadge.textContent = "Occupied";
+                    statusBadge.classList.remove("status-available");
+                    statusBadge.classList.add("status-occupied");
+                } else {
+                    statusBadge.textContent = "Available";
+                    statusBadge.classList.remove("status-occupied");
+                    statusBadge.classList.add("status-available");
+                }
+            }
+        });
+
+        // Update summary numbers in UI cards
+        const availableCountElement = document.getElementById("available-count");
+        const occupiedCountElement = document.getElementById("occupied-count");
+
+        if (availableCountElement) {
+            availableCountElement.textContent = availableCount;
+        }
+
+        if (occupiedCountElement) {
+            occupiedCountElement.textContent = occupiedCount;
+        }
+    }
 </script>
 
 </body>

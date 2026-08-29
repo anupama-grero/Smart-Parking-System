@@ -15,6 +15,11 @@ public class DriverDashboardController {
         return "driver-dashboard";
     }
 
+    @GetMapping("/security-guard")
+    public String securityGuard() {
+        return "security-guard";
+    }
+
     // Real-time polling API for parking slot statuses
     @GetMapping("/api/parking/status")
     @ResponseBody

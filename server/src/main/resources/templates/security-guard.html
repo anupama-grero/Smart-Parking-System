@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Guard - Entry Barrier Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .dashboard-card {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #333;
+            text-align: center;
+            font-size: 22px;
+        }
+        .status-group {
+            margin: 20px 0;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+        .status-item:last-child {
+            margin-bottom: 0;
+        }
+        .badge {
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .online { background: #d4edda; color: #155724; }
+        .offline { background: #f8d7da; color: #721c24; }
+        .open-state { background: #cce5ff; color: #004085; }
+        .closed-state { background: #e2e3e5; color: #1e1e1e; }
+        
+        .btn-action {
+            width: 100%;
+            padding: 12px;
+            background-color: #0056b3; /* Contrast ප්‍රශ්නය මඟහරවා ගැනීමට තද නිල් පාටක් යොදන ලදී */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-action:hover:not(:disabled) {
+            background-color: #004085;
+        }
+        .btn-action:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #messageBox {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: center;
+            display: none;
+        }
+        .success-msg { background: #d4edda; color: #155724; }
+        .error-msg { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-card">
+        <h2>Gate Control Panel</h2>
+        
+        <div class="status-group">
+            <div class="status-item">
+                <span>ESP32 Status:</span>
+                <span id="espStatus" class="badge offline">Checking...</span>
+            </div>
+            <div class="status-item">
+                <span>Entry Gate:</span>
+                <span id="entryStatus" class="badge closed-state">Unknown</span>
+            </div>
+            <div class="status-item">
+                <span>Exit Gate:</span>
+                <span id="exitStatus" class="badge closed-state">Unknown</span>
+            </div>
+        </div>
+
+        <button id="openBtn" class="btn-action" onclick="openEntryBarrier()">Open Entry Barrier</button>
+
+        <div id="messageBox"></div>
+    </div>
+
+    <script>
+        async function fetchGateStatus() {
+            try {
+                const response = await fetch('/api/gates/status');
+                if (!response.ok) throw new Error('Failed to fetch status');
+                
+                const data = await response.json();
+                
+                document.getElementById('espStatus').textContent = 'Online';
+                document.getElementById('espStatus').className = 'badge online';
+
+                const entryBadge = document.getElementById('entryStatus');
+                entryBadge.textContent = data.entryGate || 'CLOSED';
+                entryBadge.className = data.entryGate === 'OPEN' ? 'badge open-state' : 'badge closed-state';
+
+                const exitBadge = document.getElementById('exitStatus');
+                exitBadge.textContent = data.exitGate || 'CLOSED';
+                exitBadge.className = data.exitGate === 'OPEN' ? 'badge open-state' : 'badge closed-state';
+
+            } catch (error) {
+                console.error(error); // SonarQube warning එක විසඳීමට error එක log කරන ලදී
+                const espBadge = document.getElementById('espStatus');
+                espBadge.textContent = 'Offline';
+                espBadge.className = 'badge offline';
+            }
+        }
+
+        async function openEntryBarrier() {
+            const btn = document.getElementById('openBtn');
+            const msgBox = document.getElementById('messageBox');
+
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+            msgBox.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/gates/entry/open', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) throw new Error('Server returned an error');
+
+                const result = await response.json();
+
+                msgBox.textContent = result.message || 'Entry barrier opened successfully!';
+                msgBox.className = 'success-msg';
+                msgBox.style.display = 'block';
+                
+                await fetchGateStatus();
+
+            } catch (error) {
+                console.error(error); // SonarQube warning එක විසඳීමට error එක log කරන ලදී
+                msgBox.textContent = 'Failed to open entry barrier. Try again.';
+                msgBox.className = 'error-msg';
+                msgBox.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Open Entry Barrier';
+            }
+        }
+
+        setInterval(fetchGateStatus, 3000);
+        window.onload = fetchGateStatus;
+    </script>
+</body>
+</html>

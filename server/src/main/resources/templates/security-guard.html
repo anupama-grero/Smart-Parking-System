@@ -3,178 +3,526 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Security Guard - Entry Barrier Control</title>
+    <title>Security Guard Override Station | Smart Parking System</title>
+    
+    <!-- Modern Google Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f0f4f9 0%, #e2e8f0 100%);
+            --card-bg: rgba(255, 255, 255, 0.92);
+            --card-border: rgba(226, 232, 240, 0.8);
+            --card-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.1), 0 0 15px rgba(0, 0, 0, 0.03);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --primary-blue: #2563eb;
+            --primary-blue-hover: #1d4ed8;
+            --secondary-gray: #475569;
+            --secondary-gray-hover: #334155;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --status-bg: #f8fafc;
+            --status-border: #e2e8f0;
+            --visualizer-bg: #f1f5f9;
+            --arm-color: #f59e0b;
+            --toast-success-bg: #dcfce7;
+            --toast-success-color: #15803d;
+            --toast-error-bg: #fee2e2;
+            --toast-error-color: #b91c1c;
+        }
+
+        body.dark-theme {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --card-bg: rgba(30, 41, 59, 0.88);
+            --card-border: rgba(51, 65, 85, 0.6);
+            --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --primary-blue: #3b82f6;
+            --primary-blue-hover: #2563eb;
+            --secondary-gray: #475569;
+            --secondary-gray-hover: #64748b;
+            --status-bg: #1e293b;
+            --status-border: #334155;
+            --visualizer-bg: #0f172a;
+            --arm-color: #fbbf24;
+            --toast-success-bg: #064e3b;
+            --toast-success-color: #6ee7b7;
+            --toast-error-bg: #7f1d1d;
+            --toast-error-color: #fca5a5;
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f6f9;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-gradient);
             margin: 0;
-            padding: 20px;
+            padding: 24px 16px;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
         }
-        .dashboard-card {
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+        .container {
             width: 100%;
-            max-width: 400px;
+            max-width: 520px;
         }
-        h2 {
-            margin-top: 0;
-            color: #333;
-            text-align: center;
-            font-size: 22px;
-        }
-        .status-group {
-            margin: 20px 0;
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-        }
-        .status-item {
+
+        .header-bar {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
-            font-size: 15px;
+            align-items: center;
+            margin-bottom: 16px;
         }
-        .status-item:last-child {
-            margin-bottom: 0;
-        }
-        .badge {
-            font-weight: bold;
-            padding: 2px 8px;
-            border-radius: 4px;
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 6px 14px;
+            border-radius: 999px;
             font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
-        .online { background: #d4edda; color: #155724; }
-        .offline { background: #f8d7da; color: #721c24; }
-        .open-state { background: #cce5ff; color: #004085; }
-        .closed-state { background: #e2e3e5; color: #1e1e1e; }
-        
-        .btn-action {
-            width: 100%;
-            padding: 12px;
-            background-color: #0056b3; /* Contrast ප්‍රශ්නය මඟහරවා ගැනීමට තද නිල් පාටක් යොදන ලදී */
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
+
+        .theme-toggle-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
             cursor: pointer;
-            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
-        .btn-action:hover:not(:disabled) {
-            background-color: #004085;
+
+        .theme-toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
         }
-        .btn-action:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
+
+        .dashboard-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 32px 28px;
+            box-shadow: var(--card-shadow);
         }
-        #messageBox {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 14px;
+
+        .card-header {
             text-align: center;
-            display: none;
+            margin-bottom: 24px;
         }
-        .success-msg { background: #d4edda; color: #155724; }
-        .error-msg { background: #f8d7da; color: #721c24; }
+
+        .card-header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+
+        .card-header p {
+            margin: 6px 0 0 0;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Status Section */
+        .status-container {
+            background: var(--status-bg);
+            border: 1px solid var(--status-border);
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--status-border);
+        }
+
+        .status-row:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Pulsing Health Indicator */
+        .pulse-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .pulse-green {
+            background-color: var(--accent-green);
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulseGreen 2s infinite;
+        }
+
+        .pulse-red {
+            background-color: var(--accent-red);
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            animation: pulseRed 2s infinite;
+        }
+
+        @keyframes pulseGreen {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        @keyframes pulseRed {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .status-online { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .status-offline { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .status-open { background: rgba(37, 99, 235, 0.15); color: var(--primary-blue); border: 1px solid rgba(37, 99, 235, 0.3); }
+        .status-closed { background: rgba(100, 116, 139, 0.15); color: var(--text-muted); border: 1px solid rgba(100, 116, 139, 0.3); }
+
+        /* Barrier Visualizer Simulation Section */
+        .visualizer-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .visualizer-card {
+            background: var(--visualizer-bg);
+            border: 1px solid var(--status-border);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .visualizer-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .barrier-graphic {
+            position: relative;
+            height: 70px;
+            background: rgba(0, 0, 0, 0.04);
+            border-radius: 12px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            padding: 10px 14px;
+            overflow: hidden;
+        }
+
+        body.dark-theme .barrier-graphic {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .signal-light {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-bottom: 6px;
+        }
+
+        .signal-green { background-color: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
+        .signal-red { background-color: var(--accent-red); box-shadow: 0 0 10px var(--accent-red); }
+
+        .barrier-post {
+            width: 12px;
+            height: 36px;
+            background: #64748b;
+            border-radius: 4px 4px 0 0;
+            position: relative;
+        }
+
+        .barrier-arm {
+            position: absolute;
+            bottom: 24px;
+            left: 6px;
+            width: 75px;
+            height: 6px;
+            background: repeating-linear-gradient(
+                90deg,
+                var(--arm-color),
+                var(--arm-color) 10px,
+                #ef4444 10px,
+                #ef4444 20px
+            );
+            border-radius: 4px;
+            transform-origin: left center;
+            transform: rotate(0deg);
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .barrier-arm-open {
+            transform: rotate(-65deg);
+        }
+
+        /* Control Sections & Buttons */
+        .control-group-title {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 18px 0 10px 0;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .btn-action {
+            position: relative;
+            overflow: hidden;
+            border: none;
+            border-radius: 14px;
+            padding: 14px 16px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.2);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
+        }
+
+        .btn-action:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-action:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #1d4ed8 100%);
+            color: #ffffff;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary-gray) 0%, #334155 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(71, 85, 105, 0.2);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            box-shadow: 0 6px 20px rgba(71, 85, 105, 0.35);
+        }
+
+        .btn-action:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Ripple Effect */
+        span.ripple {
+            position: absolute;
+            border-radius: 50%;
+            transform: scale(0);
+            animation: rippleAnimation 600ms linear;
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+        @keyframes rippleAnimation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* Spinner for Loading */
+        .spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast Notifications */
+        .message-toast {
+            margin-top: 20px;
+            padding: 14px 18px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .toast-show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast-success {
+            background-color: var(--toast-success-bg);
+            color: var(--toast-success-color);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .toast-error {
+            background-color: var(--toast-error-bg);
+            color: var(--toast-error-color);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
     </style>
 </head>
-<body>
+<body class="dark-theme">
 
-    <div class="dashboard-card">
-        <h2>Gate Control Panel</h2>
+    <div class="container">
         
-        <div class="status-group">
-            <div class="status-item">
-                <span>ESP32 Status:</span>
-                <span id="espStatus" class="badge offline">Checking...</span>
+        <div class="header-bar">
+            <div class="brand-badge">
+                🚗 Smart Parking System
             </div>
-            <div class="status-item">
-                <span>Entry Gate:</span>
-                <span id="entryStatus" class="badge closed-state">Unknown</span>
-            </div>
-            <div class="status-item">
-                <span>Exit Gate:</span>
-                <span id="exitStatus" class="badge closed-state">Unknown</span>
-            </div>
+            <button id="themeToggleBtn" class="theme-toggle-btn">
+                ☀️ <span class="theme-label">Light Mode</span>
+            </button>
         </div>
 
-        <button id="openBtn" class="btn-action" onclick="openEntryBarrier()">Open Entry Barrier</button>
+        <div class="dashboard-card">
+            
+            <div class="card-header">
+                <h2>Gate & Barrier Control Panel</h2>
+                <p>Security Guard Remote Override Station</p>
+            </div>
 
-        <div id="messageBox"></div>
+            <!-- Health & Live Status -->
+            <div class="status-container">
+                <div class="status-row">
+                    <span class="status-label">
+                        <span id="espPulse" class="pulse-dot pulse-red"></span>
+                        ESP32 Device Status:
+                    </span>
+                    <span id="espStatus" class="status-pill status-offline">Checking...</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Entrance Barrier:</span>
+                    <span id="entryStatus" class="status-pill status-closed">CLOSED</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Exit Barrier:</span>
+                    <span id="exitStatus" class="status-pill status-closed">CLOSED</span>
+                </div>
+            </div>
+
+            <!-- Interactive Visualizer Simulation -->
+            <div class="visualizer-section">
+                <div class="visualizer-card">
+                    <div class="visualizer-title">Entrance Gate</div>
+                    <div class="barrier-graphic">
+                        <div id="entryLightVisual" class="signal-light signal-red"></div>
+                        <div class="barrier-post">
+                            <div id="entryArmVisual" class="barrier-arm"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="visualizer-card">
+                    <div class="visualizer-title">Exit Gate</div>
+                    <div class="barrier-graphic">
+                        <div id="exitLightVisual" class="signal-light signal-red"></div>
+                        <div class="barrier-post">
+                            <div id="exitArmVisual" class="barrier-arm"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Entrance Barrier Controls -->
+            <div class="control-group-title">Entrance Barrier Operations</div>
+            <div class="btn-grid">
+                <button id="openEntryBtn" class="btn-action btn-primary" onclick="openEntryBarrier()">
+                    <span>🔓</span> Open Entrance
+                </button>
+                <button id="closeEntryBtn" class="btn-action btn-secondary" onclick="closeEntryBarrier()">
+                    <span>🔒</span> Close Entrance
+                </button>
+            </div>
+
+            <!-- Exit Barrier Controls -->
+            <div class="control-group-title">Exit Barrier Operations</div>
+            <div class="btn-grid">
+                <button id="openExitBtn" class="btn-action btn-primary" onclick="openExitBarrier()">
+                    <span>🔓</span> Open Exit
+                </button>
+                <button id="closeExitBtn" class="btn-action btn-secondary" onclick="closeExitBarrier()">
+                    <span>🔒</span> Close Exit
+                </button>
+            </div>
+
+            <!-- Dynamic Notification Toast -->
+            <div id="messageBox" class="message-toast"></div>
+
+        </div>
     </div>
 
-    <script>
-        async function fetchGateStatus() {
-            try {
-                const response = await fetch('/api/gates/status');
-                if (!response.ok) throw new Error('Failed to fetch status');
-                
-                const data = await response.json();
-                
-                document.getElementById('espStatus').textContent = 'Online';
-                document.getElementById('espStatus').className = 'badge online';
-
-                const entryBadge = document.getElementById('entryStatus');
-                entryBadge.textContent = data.entryGate || 'CLOSED';
-                entryBadge.className = data.entryGate === 'OPEN' ? 'badge open-state' : 'badge closed-state';
-
-                const exitBadge = document.getElementById('exitStatus');
-                exitBadge.textContent = data.exitGate || 'CLOSED';
-                exitBadge.className = data.exitGate === 'OPEN' ? 'badge open-state' : 'badge closed-state';
-
-            } catch (error) {
-                console.error(error); // SonarQube warning එක විසඳීමට error එක log කරන ලදී
-                const espBadge = document.getElementById('espStatus');
-                espBadge.textContent = 'Offline';
-                espBadge.className = 'badge offline';
-            }
-        }
-
-        async function openEntryBarrier() {
-            const btn = document.getElementById('openBtn');
-            const msgBox = document.getElementById('messageBox');
-
-            btn.disabled = true;
-            btn.textContent = 'Processing...';
-            msgBox.style.display = 'none';
-
-            try {
-                const response = await fetch('/api/gates/entry/open', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                if (!response.ok) throw new Error('Server returned an error');
-
-                const result = await response.json();
-
-                msgBox.textContent = result.message || 'Entry barrier opened successfully!';
-                msgBox.className = 'success-msg';
-                msgBox.style.display = 'block';
-                
-                await fetchGateStatus();
-
-            } catch (error) {
-                console.error(error); // SonarQube warning එක විසඳීමට error එක log කරන ලදී
-                msgBox.textContent = 'Failed to open entry barrier. Try again.';
-                msgBox.className = 'error-msg';
-                msgBox.style.display = 'block';
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Open Entry Barrier';
-            }
-        }
-
-        setInterval(fetchGateStatus, 3000);
-        window.onload = fetchGateStatus;
-    </script>
+    <script src="/js/security-gate.js"></script>
 </body>
 </html>

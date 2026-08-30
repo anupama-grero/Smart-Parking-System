@@ -166,10 +166,133 @@
     }
 }
 
+/* Security guard gate control panel */
+.security-dashboard {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    background-color: var(--parking-bg);
+}
+
+.gate-control-card {
+    width: 100%;
+    max-width: 28rem;
+    border: 1px solid var(--parking-border);
+    border-radius: var(--parking-radius);
+    background-color: var(--parking-surface);
+    box-shadow: var(--parking-shadow);
+}
+
+.gate-control-card .card-body {
+    padding: 1.75rem;
+}
+
+.gate-control-title {
+    margin-bottom: 0;
+    color: var(--parking-primary);
+    font-size: 1.35rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.gate-status-group {
+    margin: 1.25rem 0;
+    padding: 1rem;
+    border: 1px solid var(--parking-border);
+    border-radius: var(--parking-radius);
+    background-color: #f8fafc;
+}
+
+.gate-status-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.65rem;
+    font-size: 0.95rem;
+}
+
+.gate-status-item:last-child {
+    margin-bottom: 0;
+}
+
+.gate-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.gate-badge-online {
+    color: var(--parking-available);
+    background-color: #f0fdf4;
+}
+
+.gate-badge-offline {
+    color: var(--parking-occupied);
+    background-color: #fef2f2;
+}
+
+.gate-badge-open {
+    color: #1d4ed8;
+    background-color: #eff6ff;
+}
+
+.gate-badge-closed {
+    color: var(--parking-text);
+    background-color: #e2e8f0;
+}
+
+.gate-action-btn {
+    width: 100%;
+    margin-top: 0.75rem;
+    border: none;
+    border-radius: var(--parking-radius);
+    padding: 0.75rem 1rem;
+    color: #ffffff;
+    background-color: var(--parking-primary);
+    font-size: 1rem;
+    font-weight: 700;
+    transition: background-color var(--parking-transition);
+}
+
+.gate-action-btn:hover:not(:disabled) {
+    background-color: var(--parking-accent);
+}
+
+.gate-action-btn:disabled {
+    cursor: not-allowed;
+    background-color: #94a3b8;
+}
+
+.gate-message {
+    display: none;
+    margin-top: 1rem;
+    border-radius: var(--parking-radius);
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.gate-message-success {
+    color: var(--parking-available);
+    background-color: #f0fdf4;
+}
+
+.gate-message-error {
+    color: var(--parking-occupied);
+    background-color: #fef2f2;
+}
+
 /* Respect users who prefer reduced motion. */
 @media (prefers-reduced-motion: reduce) {
     .parking-slot,
-    .status-badge {
+    .status-badge,
+    .gate-action-btn {
         transition: none;
     }
 

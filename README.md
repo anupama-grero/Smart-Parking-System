@@ -103,6 +103,121 @@ Software Sub-Team: Spring Boot MVC development, MySQL setup & Thymeleaf UI desig
 
 ---
 
+## Completed Frontend Features
+
+The following frontend issues have been implemented and verified against the current Spring Boot backend:
+
+### 1. Driver Dashboard View
+
+**What it does:** Displays an 8-slot campus parking grid with summary counts for available and occupied spaces.
+
+**Route:** `GET /driver`
+
+**Main files:**
+- `server/src/main/resources/templates/driver-dashboard.html`
+- `server/src/main/java/com/smartparking/backend/DriverDashboardController.java`
+
+**Details:**
+- Bootstrap 5 layout with header, summary cards, parking grid, and footer
+- Each slot shows its campus category (Undergraduates, Lecturers, Visitors, etc.)
+- Initial slot markup is updated on load by the polling script (see Issue #2)
+
+### 2. Real-Time Parking Occupancy Polling
+
+**What it does:** Polls the backend every 5 seconds and updates slot badges plus available/occupied summary counts.
+
+**API:** `GET /api/parking/status`
+
+**Response format:**
+```json
+[
+  { "slotId": 1, "isOccupied": false },
+  { "slotId": 2, "isOccupied": true }
+]
+```
+
+**Main files:**
+- Inline polling script in `driver-dashboard.html`
+- `DriverDashboardController.getParkingStatus()`
+
+**Details:**
+- Uses `fetch()` with JSON accept headers
+- Updates DOM elements `#slot-{id}-status`, `#available-count`, and `#occupied-count`
+- Handles API failures gracefully without breaking the page
+- Supports both `slotId`/`isOccupied` and snake_case field names
+
+### 3. Security Guard Barrier Control
+
+**What it does:** Provides a security guard dashboard to monitor gate status and remotely open entry/exit barriers.
+
+**Route:** `GET /security-guard`
+
+**APIs:**
+- `GET /api/gates/status` → `{ "entryGate": "CLOSED", "exitGate": "CLOSED" }`
+- `POST /api/gates/entry/open` → `{ "message": "Entry barrier opened successfully!" }`
+- `POST /api/gates/exit/open` → `{ "message": "Exit barrier opened successfully!" }`
+
+**Main files:**
+- `server/src/main/resources/templates/security-guard.html`
+- `server/src/main/java/com/smartparking/backend/GateController.java`
+- `DriverDashboardController` (security guard page route)
+
+**Details:**
+- Polls gate status every 3 seconds
+- Disables action buttons while a request is in progress
+- Shows success/error feedback in a message box
+- Gate state is currently held in-memory in the backend (stub until ESP32 integration is connected)
+
+### 4. Custom Dashboard CSS Enhancements
+
+**What it does:** Applies shared team styling for parking cards, occupancy badges, and security gate controls.
+
+**Main file:** `server/src/main/resources/static/css/dashboard.css`
+
+**Details:**
+- Bootstrap source files are loaded from CDN and are not modified locally
+- Available/occupied states use distinct colors and top-border accents on slot cards
+- Gate status badges and action buttons follow the same dashboard theme
+- Responsive layout refinements for smaller screens
+- Reduced-motion support for accessibility
+
+---
+
+## Running and Testing the Application
+
+### Prerequisites
+- Java 17 or later
+- Maven Wrapper (included in `server/`)
+
+### Start the backend
+```bash
+cd server
+./mvnw spring-boot:run        # Linux/macOS
+.\mvnw.cmd spring-boot:run    # Windows
+```
+
+The application starts on `http://localhost:8080` by default.
+
+### Test the dashboards
+| Page | URL |
+|------|-----|
+| Driver Dashboard | http://localhost:8080/driver |
+| Security Guard Dashboard | http://localhost:8080/security-guard |
+
+### Run tests
+```bash
+cd server
+./mvnw test        # Linux/macOS
+.\mvnw.cmd test    # Windows
+```
+
+### Configuration
+- Default config: `server/src/main/resources/application.properties`
+- Current backend uses in-memory H2 and stub REST responses for parking/gate status
+- ESP32/firmware integration is planned but not yet present in this repository
+
+---
+
 ## 📂 Repository Structure
 ```text
 ├── firmware/

@@ -12,12 +12,12 @@
     
     <style>
         :root {
-            --bg-gradient: linear-gradient(135deg, #f0f4f9 0%, #e2e8f0 100%);
-            --card-bg: rgba(255, 255, 255, 0.92);
-            --card-border: rgba(226, 232, 240, 0.8);
-            --card-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.1), 0 0 15px rgba(0, 0, 0, 0.03);
+            --bg-gradient: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            --card-bg: rgba(255, 255, 255, 0.96);
+            --card-border: rgba(148, 163, 184, 0.35);
+            --card-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.04);
             --text-primary: #0f172a;
-            --text-secondary: #475569;
+            --text-secondary: #334155;
             --text-muted: #64748b;
             --primary-blue: #2563eb;
             --primary-blue-hover: #1d4ed8;
@@ -25,21 +25,24 @@
             --secondary-gray-hover: #334155;
             --accent-green: #10b981;
             --accent-red: #ef4444;
-            --status-bg: #f8fafc;
-            --status-border: #e2e8f0;
-            --visualizer-bg: #f1f5f9;
-            --arm-color: #f59e0b;
+            --status-bg: #f1f5f9;
+            --status-border: #cbd5e1;
+            --visualizer-bg: #e2e8f0;
+            --arm-color: #d97706;
             --toast-success-bg: #dcfce7;
             --toast-success-color: #15803d;
             --toast-error-bg: #fee2e2;
             --toast-error-color: #b91c1c;
+            --tab-active-bg: #ffffff;
+            --tab-active-border: #2563eb;
+            --tab-active-text: #2563eb;
         }
 
         body.dark-theme {
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --bg-gradient: linear-gradient(135deg, #0b1329 0%, #1e293b 100%);
             --card-bg: rgba(30, 41, 59, 0.88);
             --card-border: rgba(51, 65, 85, 0.6);
-            --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
             --text-primary: #f8fafc;
             --text-secondary: #cbd5e1;
             --text-muted: #94a3b8;
@@ -55,6 +58,9 @@
             --toast-success-color: #6ee7b7;
             --toast-error-bg: #7f1d1d;
             --toast-error-color: #fca5a5;
+            --tab-active-bg: #1e293b;
+            --tab-active-border: #3b82f6;
+            --tab-active-text: #3b82f6;
         }
 
         * {
@@ -66,51 +72,73 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             background: var(--bg-gradient);
             margin: 0;
-            padding: 24px 16px;
+            padding: 0;
             min-height: 100vh;
             display: flex;
-            justify-content: center;
-            align-items: center;
+            flex-direction: column;
         }
 
-        .container {
+        .dashboard-wrapper {
             width: 100%;
-            max-width: 520px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
         }
 
-        .header-bar {
+        /* Top Header Bar */
+        .top-navbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            padding: 16px 28px;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
         }
 
         .brand-badge {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            padding: 6px 14px;
-            border-radius: 999px;
-            font-size: 13px;
-            font-weight: 700;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 800;
             color: var(--text-primary);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            letter-spacing: -0.3px;
+        }
+
+        .brand-icon {
+            font-size: 24px;
+            background: linear-gradient(135deg, var(--primary-blue), #60a5fa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .navbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
         .theme-toggle-btn {
-            background: var(--card-bg);
+            background: var(--status-bg);
             border: 1px solid var(--card-border);
             color: var(--text-primary);
-            padding: 8px 16px;
+            padding: 10px 20px;
             border-radius: 999px;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
 
@@ -119,37 +147,48 @@
             box-shadow: 0 6px 16px rgba(0,0,0,0.1);
         }
 
-        .dashboard-card {
+        /* Main Grid Content Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 24px;
+            flex: 1;
+            align-items: start;
+        }
+
+        /* Panel Cards */
+        .panel-card {
             background: var(--card-bg);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--card-border);
             border-radius: 24px;
-            padding: 32px 28px;
+            padding: 28px;
             box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
         }
 
-        .card-header {
-            text-align: center;
-            margin-bottom: 24px;
+        .panel-title-group {
+            margin-bottom: 20px;
         }
 
-        .card-header h2 {
+        .panel-title-group h3 {
             margin: 0;
-            font-size: 24px;
+            font-size: 18px;
             font-weight: 800;
             color: var(--text-primary);
-            letter-spacing: -0.5px;
+            letter-spacing: -0.3px;
         }
 
-        .card-header p {
-            margin: 6px 0 0 0;
-            font-size: 14px;
+        .panel-title-group p {
+            margin: 4px 0 0 0;
+            font-size: 13px;
             color: var(--text-muted);
             font-weight: 500;
         }
 
-        /* Status Section */
+        /* Hardware Status Rows */
         .status-container {
             background: var(--status-bg);
             border: 1px solid var(--status-border);
@@ -162,7 +201,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
+            padding: 12px 0;
             border-bottom: 1px solid var(--status-border);
         }
 
@@ -181,8 +220,8 @@
 
         /* Pulsing Health Indicator */
         .pulse-dot {
-            width: 9px;
-            height: 9px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             display: inline-block;
         }
@@ -225,126 +264,208 @@
         .status-open { background: rgba(37, 99, 235, 0.15); color: var(--primary-blue); border: 1px solid rgba(37, 99, 235, 0.3); }
         .status-closed { background: rgba(100, 116, 139, 0.15); color: var(--text-muted); border: 1px solid rgba(100, 116, 139, 0.3); }
 
-        /* Barrier Visualizer Simulation Section */
-        .visualizer-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
+        /* Gate Switcher Tabs */
+        .gate-switcher-container {
             margin-bottom: 24px;
         }
 
-        .visualizer-card {
-            background: var(--visualizer-bg);
-            border: 1px solid var(--status-border);
-            border-radius: 16px;
-            padding: 16px;
-            text-align: center;
-        }
-
-        .visualizer-title {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 12px;
-        }
-
-        .barrier-graphic {
-            position: relative;
-            height: 70px;
-            background: rgba(0, 0, 0, 0.04);
-            border-radius: 12px;
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            padding: 10px 14px;
-            overflow: hidden;
-        }
-
-        body.dark-theme .barrier-graphic {
-            background: rgba(255, 255, 255, 0.03);
-        }
-
-        .signal-light {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            margin-bottom: 6px;
-        }
-
-        .signal-green { background-color: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
-        .signal-red { background-color: var(--accent-red); box-shadow: 0 0 10px var(--accent-red); }
-
-        .barrier-post {
-            width: 12px;
-            height: 36px;
-            background: #64748b;
-            border-radius: 4px 4px 0 0;
-            position: relative;
-        }
-
-        .barrier-arm {
-            position: absolute;
-            bottom: 24px;
-            left: 6px;
-            width: 75px;
-            height: 6px;
-            background: repeating-linear-gradient(
-                90deg,
-                var(--arm-color),
-                var(--arm-color) 10px,
-                #ef4444 10px,
-                #ef4444 20px
-            );
-            border-radius: 4px;
-            transform-origin: left center;
-            transform: rotate(0deg);
-            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .barrier-arm-open {
-            transform: rotate(-65deg);
-        }
-
-        /* Control Sections & Buttons */
-        .control-group-title {
+        .gate-switcher-title {
             font-size: 12px;
             font-weight: 800;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin: 18px 0 10px 0;
+            letter-spacing: 0.8px;
+            margin-bottom: 12px;
         }
 
-        .btn-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 8px;
+        .gate-switcher-tabs {
+            display: flex;
+            background: var(--status-bg);
+            border: 1px solid var(--status-border);
+            padding: 6px;
+            border-radius: 16px;
+            gap: 6px;
         }
 
-        .btn-action {
-            position: relative;
-            overflow: hidden;
-            border: none;
-            border-radius: 14px;
-            padding: 14px 16px;
+        .gate-tab-btn {
+            flex: 1;
+            padding: 12px 14px;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            background: transparent;
+            color: var(--text-secondary);
             font-family: inherit;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .gate-tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .gate-tab-btn.active {
+            background: var(--tab-active-bg);
+            border-color: var(--tab-active-border);
+            color: var(--tab-active-text);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Single Visualizer Stage */
+        .visualizer-stage {
+            background: var(--visualizer-bg);
+            border: 1px solid var(--status-border);
+            border-radius: 20px;
+            padding: 28px;
+            text-align: center;
+            margin-bottom: 24px;
+            position: relative;
+            min-height: 290px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .stage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .stage-header-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .barrier-graphic-large {
+            position: relative;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.04);
+            border-radius: 16px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            padding: 24px 44px;
+            overflow: hidden;
+            border: 1px solid var(--status-border);
+        }
+
+        body.dark-theme .barrier-graphic-large {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* Vehicle Simulation Styling */
+        .road-lane {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 32px;
+            background: rgba(100, 116, 139, 0.12);
+            border-top: 2px dashed rgba(148, 163, 184, 0.3);
+            z-index: 1;
+        }
+
+        .vehicle-car {
+            position: absolute;
+            bottom: 6px;
+            left: -60px;
+            font-size: 32px;
+            z-index: 5;
+            transition: left 2.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s ease;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .vehicle-facing-right {
+            transform: scaleX(-1);
+        }
+
+        .signal-light-large {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-bottom: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .signal-green { background-color: var(--accent-green); box-shadow: 0 0 15px var(--accent-green); }
+        .signal-red { background-color: var(--accent-red); box-shadow: 0 0 15px var(--accent-red); }
+
+        .barrier-post-large {
+            width: 22px;
+            height: 50px;
+            background: #64748b;
+            border-radius: 6px 6px 0 0;
+            position: relative;
+            margin-left: 35px;
+        }
+
+        .barrier-arm-large {
+            position: absolute;
+            bottom: 34px;
+            left: 12px;
+            width: 135px;
+            height: 10px;
+            background: repeating-linear-gradient(
+                90deg,
+                var(--arm-color),
+                var(--arm-color) 16px,
+                #ef4444 16px,
+                #ef4444 32px
+            );
+            border-radius: 6px;
+            transform-origin: left center;
+            transform: rotate(0deg);
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .barrier-arm-open {
+            transform: rotate(-52deg);
+        }
+
+        /* Controls Section */
+        .controls-card {
+            margin-bottom: 24px;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .btn-action {
+            position: relative;
+            overflow: hidden;
+            border: none;
+            border-radius: 16px;
+            padding: 18px 24px;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
             box-shadow: 0 4px 14px rgba(37, 99, 235, 0.2);
             transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
         }
 
         .btn-action:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.35);
         }
 
         .btn-action:active:not(:disabled) {
@@ -363,7 +484,7 @@
         }
 
         .btn-secondary:hover:not(:disabled) {
-            box-shadow: 0 6px 20px rgba(71, 85, 105, 0.35);
+            box-shadow: 0 8px 25px rgba(71, 85, 105, 0.35);
         }
 
         .btn-action:disabled {
@@ -371,6 +492,98 @@
             cursor: not-allowed;
             transform: none !important;
             box-shadow: none !important;
+        }
+
+        /* Activity Feed & Toasts */
+        .activity-feed-card {
+            background: var(--status-bg);
+            border: 1px solid var(--status-border);
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-top: 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 180px;
+        }
+
+        .activity-header {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .activity-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 260px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .activity-item {
+            font-size: 13.5px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-time {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        /* Toast Notifications - Fixed Height Container to Avoid Layout Shift */
+        .message-toast {
+            margin-top: 12px;
+            margin-bottom: 4px;
+            padding: 12px 18px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            opacity: 0;
+            min-height: 46px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .toast-show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .toast-success {
+            background-color: var(--toast-success-bg);
+            color: var(--toast-success-color);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .toast-error {
+            background-color: var(--toast-error-bg);
+            color: var(--toast-error-color);
+            border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
         /* Ripple Effect */
@@ -391,8 +604,8 @@
 
         /* Spinner for Loading */
         .spinner {
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
             border: 2px solid rgba(255, 255, 255, 0.4);
             border-radius: 50%;
             border-top-color: #ffffff;
@@ -403,124 +616,156 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Toast Notifications */
-        .message-toast {
-            margin-top: 20px;
-            padding: 14px 18px;
-            border-radius: 14px;
-            font-size: 13px;
-            font-weight: 600;
-            text-align: center;
-            opacity: 0;
-            transition: opacity 0.3s ease, transform 0.3s ease;
+        /* Responsive Breakpoints */
+        @media (max-width: 991.98px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-wrapper {
+                padding: 16px;
+            }
         }
 
-        .toast-show {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        @media (max-width: 575.98px) {
+            .top-navbar {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
 
-        .toast-success {
-            background-color: var(--toast-success-bg);
-            color: var(--toast-success-color);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
+            .navbar-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
 
-        .toast-error {
-            background-color: var(--toast-error-bg);
-            color: var(--toast-error-color);
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            .btn-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .barrier-arm-large {
+                width: 120px;
+            }
         }
     </style>
 </head>
 <body class="dark-theme">
 
-    <div class="container">
+    <div class="dashboard-wrapper">
         
-        <div class="header-bar">
+        <!-- Top Navigation Bar -->
+        <header class="top-navbar">
             <div class="brand-badge">
-                🚗 Smart Parking System
+                <span class="brand-icon">🚗</span>
+                <span>Smart Parking Station</span>
             </div>
-            <button id="themeToggleBtn" class="theme-toggle-btn">
-                ☀️ <span class="theme-label">Light Mode</span>
-            </button>
-        </div>
+            <div class="navbar-actions">
+                <button id="themeToggleBtn" class="theme-toggle-btn">
+                    ☀️ <span class="theme-label">Light Mode</span>
+                </button>
+            </div>
+        </header>
 
-        <div class="dashboard-card">
+        <!-- Full-Page Grid Dashboard -->
+        <main class="dashboard-grid">
             
-            <div class="card-header">
-                <h2>Gate & Barrier Control Panel</h2>
-                <p>Security Guard Remote Override Station</p>
-            </div>
+            <!-- Left Column: System Hardware Overview & Gate Selection -->
+            <section class="panel-card">
+                <div class="panel-title-group">
+                    <h3>System Health</h3>
+                    <p>Live ESP32 Controller & Barrier Monitor</p>
+                </div>
 
-            <!-- Health & Live Status -->
-            <div class="status-container">
-                <div class="status-row">
-                    <span class="status-label">
-                        <span id="espPulse" class="pulse-dot pulse-red"></span>
-                        ESP32 Device Status:
-                    </span>
-                    <span id="espStatus" class="status-pill status-offline">Checking...</span>
-                </div>
-                <div class="status-row">
-                    <span class="status-label">Entrance Barrier:</span>
-                    <span id="entryStatus" class="status-pill status-closed">CLOSED</span>
-                </div>
-                <div class="status-row">
-                    <span class="status-label">Exit Barrier:</span>
-                    <span id="exitStatus" class="status-pill status-closed">CLOSED</span>
-                </div>
-            </div>
-
-            <!-- Interactive Visualizer Simulation -->
-            <div class="visualizer-section">
-                <div class="visualizer-card">
-                    <div class="visualizer-title">Entrance Gate</div>
-                    <div class="barrier-graphic">
-                        <div id="entryLightVisual" class="signal-light signal-red"></div>
-                        <div class="barrier-post">
-                            <div id="entryArmVisual" class="barrier-arm"></div>
-                        </div>
+                <!-- Hardware Status Summary -->
+                <div class="status-container">
+                    <div class="status-row">
+                        <span class="status-label">
+                            <span id="espPulse" class="pulse-dot pulse-red"></span>
+                            ESP32 Controller:
+                        </span>
+                        <span id="espStatus" class="status-pill status-offline">Checking...</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Entrance Barrier:</span>
+                        <span id="entryStatus" class="status-pill status-closed">CLOSED</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Exit Barrier:</span>
+                        <span id="exitStatus" class="status-pill status-closed">CLOSED</span>
                     </div>
                 </div>
 
-                <div class="visualizer-card">
-                    <div class="visualizer-title">Exit Gate</div>
-                    <div class="barrier-graphic">
-                        <div id="exitLightVisual" class="signal-light signal-red"></div>
-                        <div class="barrier-post">
-                            <div id="exitArmVisual" class="barrier-arm"></div>
+                <!-- Station Info Card -->
+                <div class="status-container" style="margin-top: auto; margin-bottom: 0;">
+                    <div class="status-label" style="font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                        ℹ️ Station Instructions
+                    </div>
+                    <p style="margin: 0; font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+                        Click <strong>Open Barrier</strong> or <strong>Close Barrier</strong> to trigger manual override. Watch the live vehicle simulation and gate visualizer.
+                    </p>
+                </div>
+
+            </section>
+
+            <!-- Right Column: Single Gate Visualizer Stage & Operations -->
+            <section class="panel-card">
+                
+                <div class="panel-title-group">
+                    <h2 id="mainHeaderTitle" style="margin: 0; font-size: 24px; font-weight: 800; color: var(--text-primary);">Gate Control Panel</h2>
+                    <p>Security Guard Remote Override Station</p>
+                </div>
+
+                <!-- Single Interactive Visualizer Stage -->
+                <div class="visualizer-stage">
+                    <div class="stage-header">
+                        <div class="stage-header-title">
+                            <span id="activeGateIcon">🚗</span>
+                            <span id="activeGateTitle">Main Gate & Barrier</span>
                         </div>
+                        <span id="activeGateStatus" class="status-pill status-closed">CLOSED</span>
+                    </div>
+
+                    <div class="barrier-graphic-large">
+                        <div class="road-lane"></div>
+                        <div id="simVehicle" class="vehicle-car">🚗</div>
+                        <div class="barrier-post-large">
+                            <div id="activeArmVisual" class="barrier-arm-large"></div>
+                        </div>
+                        <div id="activeLightVisual" class="signal-light-large signal-red"></div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Entrance Barrier Controls -->
-            <div class="control-group-title">Entrance Barrier Operations</div>
-            <div class="btn-grid">
-                <button id="openEntryBtn" class="btn-action btn-primary" onclick="openEntryBarrier()">
-                    <span>🔓</span> Open Entrance
-                </button>
-                <button id="closeEntryBtn" class="btn-action btn-secondary" onclick="closeEntryBarrier()">
-                    <span>🔒</span> Close Entrance
-                </button>
-            </div>
+                <!-- Single Gate Operation Actions -->
+                <div class="controls-card">
+                    <div class="btn-grid">
+                        <button id="openActiveBtn" class="btn-action btn-primary" onclick="openActiveGate()">
+                            <span>🔓</span> Open Barrier
+                        </button>
+                        <button id="closeActiveBtn" class="btn-action btn-secondary" onclick="closeActiveGate()">
+                            <span>🔒</span> Close Barrier
+                        </button>
+                    </div>
+                </div>
 
-            <!-- Exit Barrier Controls -->
-            <div class="control-group-title">Exit Barrier Operations</div>
-            <div class="btn-grid">
-                <button id="openExitBtn" class="btn-action btn-primary" onclick="openExitBarrier()">
-                    <span>🔓</span> Open Exit
-                </button>
-                <button id="closeExitBtn" class="btn-action btn-secondary" onclick="closeExitBarrier()">
-                    <span>🔒</span> Close Exit
-                </button>
-            </div>
+                <!-- Dynamic Notification Toast -->
+                <div id="messageBox" class="message-toast"></div>
 
-            <!-- Dynamic Notification Toast -->
-            <div id="messageBox" class="message-toast"></div>
+                <!-- Recent Activity Feed (Adjusted to fill empty space under buttons) -->
+                <div class="activity-feed-card">
+                    <div class="activity-header">
+                        <span>📋 Recent Gate Overrides</span>
+                    </div>
+                    <ul id="activityList" class="activity-list">
+                        <li class="activity-item">
+                            <span>System initialized</span>
+                            <span class="activity-time">Just now</span>
+                        </li>
+                    </ul>
+                </div>
 
-        </div>
+            </section>
+
+        </main>
     </div>
 
     <script src="/js/security-gate.js"></script>

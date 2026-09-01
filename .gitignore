@@ -1,4 +1,17 @@
+# Maven target directory
+server/target/
 target/
 **/target/
-.vscode/
+
+# Compiled Java class files
 *.class
+
+# IDE / Editor files
+.idea/
+.vscode/
+*.iml
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db

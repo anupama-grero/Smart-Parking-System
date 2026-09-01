@@ -181,6 +181,39 @@ The following frontend issues have been implemented and verified against the cur
 - Responsive layout refinements for smaller screens
 - Reduced-motion support for accessibility
 
+### 5. Driver & Parking Session Management (Issue #8)
+
+**What it does:** Manages driver arrival/entry and departure/exit flows, persists sessions in an H2 relational database, enforces slot assignment rules, and synchronizes real-time parking slot occupancy with the driver dashboard.
+
+**APIs:**
+- `POST /api/parking-sessions/entry` → Creates active parking session, registers/validates driver, and sets slot state to occupied (201 Created).
+- `PUT /api/parking-sessions/exit/{sessionId}` → Completes active parking session, sets exit timestamp, and releases parking slot to available (200 OK).
+- `GET /api/parking-sessions/{id}` → Retrieves session details by ID (200 OK).
+- `GET /api/parking-sessions/active` → Returns list of active parking sessions (200 OK).
+- `GET /api/parking-sessions/history` → Returns full history of completed and active sessions (200 OK).
+
+**Main files:**
+- `server/src/main/java/com/smartparking/backend/model/Driver.java`
+- `server/src/main/java/com/smartparking/backend/model/ParkingSlot.java`
+- `server/src/main/java/com/smartparking/backend/model/ParkingSession.java`
+- `server/src/main/java/com/smartparking/backend/repository/DriverRepository.java`
+- `server/src/main/java/com/smartparking/backend/repository/ParkingSlotRepository.java`
+- `server/src/main/java/com/smartparking/backend/repository/ParkingSessionRepository.java`
+- `server/src/main/java/com/smartparking/backend/service/ParkingSessionService.java`
+- `server/src/main/java/com/smartparking/backend/controller/ParkingSessionController.java`
+- `server/src/main/java/com/smartparking/backend/config/DatabaseInitializer.java`
+
+**Details:**
+- Relational JPA mapping with Spring Data Repositories and H2 database persistence.
+- Automatic seeding of campus parking slots (Slots 1–8) at startup.
+- Business rule validations:
+  - Driver & slot must exist before session creation.
+  - Parking slot must be `AVAILABLE` before assignment.
+  - Prevents duplicate `ACTIVE` sessions for the same driver or slot.
+  - Prevents completing an already completed session.
+- Real-time status API (`GET /api/parking/status`) dynamically queries slot states from the database, ensuring seamless driver dashboard synchronization.
+
+
 ---
 
 ## Running and Testing the Application

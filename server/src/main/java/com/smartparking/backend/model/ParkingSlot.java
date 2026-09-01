@@ -1,5 +1,7 @@
 package com.smartparking.backend.model;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -23,6 +25,12 @@ public class ParkingSlot {
 
     @Column(nullable = false)
     private boolean isOccupied = false;
+
+    @Column
+    private Double lastDistanceCm;
+
+    @Column
+    private LocalDateTime lastSensorUpdate;
 
     public ParkingSlot() {}
 
@@ -50,4 +58,10 @@ public class ParkingSlot {
 
     public boolean isOccupied() { return isOccupied; }
     public void setOccupied(boolean occupied) { isOccupied = occupied; }
+
+    public Double getLastDistanceCm() { return lastDistanceCm; }
+    public void setLastDistanceCm(Double lastDistanceCm) { this.lastDistanceCm = lastDistanceCm; }
+
+    public LocalDateTime getLastSensorUpdate() { return lastSensorUpdate; }
+    public void setLastSensorUpdate(LocalDateTime lastSensorUpdate) { this.lastSensorUpdate = lastSensorUpdate; }
 }

@@ -213,8 +213,75 @@ The following frontend issues have been implemented and verified against the cur
   - Prevents completing an already completed session.
 - Real-time status API (`GET /api/parking/status`) dynamically queries slot states from the database, ensuring seamless driver dashboard synchronization.
 
+### 6. Real-Time Occupancy & ESP32 Sensor Integration (Issue #6)
+
+**Purpose:**
+ESP32 HC-SR04 ultrasonic sensors measure distance to vehicles in parking slots and transmit real-time telemetry to the Spring Boot backend. The system calculates physical occupancy, updates database slot records in real time, and exposes the state to the Driver Dashboard.
+
+**System Flow:**
+```text
+ESP32 ──> HC-SR04 Ultrasonic Sensor ──> POST /api/sensors/occupancy ──> Sensor Validation
+                                                                               │
+Driver Dashboard ◄── GET /api/parking/status ◄── H2 Database ◄── Slot State Update ◄── Occupancy Calculation
+```
+
+**Sensor Integration:**
+- **Sensor Type:** HC-SR04 Ultrasonic Distance Sensor
+- **Sensor/Slot Mapping:** Sensors 1–8 map 1:1 to Parking Slots 1–8 (Echo pins on GPIO 13, 12, 14, 27, 26, 25, 33, 32)
+- **Distance Unit:** Centimeters (`cm`), range 2–400 cm
+- **Occupancy Threshold:** 50 cm (configurable via `parking.sensor.occupancy-threshold-cm`)
+
+**API Specification:**
+- **Endpoint:** `POST /api/sensors/occupancy`
+- **Headers:** `Content-Type: application/json`
+
+**Example Request:**
+```json
+{
+  "slotId": 1,
+  "distance": 12.5
+}
+```
+*Note: Accepts `slotId` / `slotNumber` / `slot_id` or `sensorId` / `sensor_id` and `distance` / `distance_cm` / `distanceCm` via JSON aliases.*
+
+**Example Response (200 OK):**
+```json
+{
+  "slotId": 1,
+  "sensorId": 1,
+  "distance": 12.5,
+  "occupied": true,
+  "availability": "OCCUPIED",
+  "heldByActiveSession": false,
+  "updatedAt": "2026-09-01T15:27:12.123"
+}
+```
+
+**Occupancy Logic:**
+- `distance <= threshold (50.0 cm)` ──> **OCCUPIED**
+- `distance > threshold (50.0 cm)` ──> **AVAILABLE**
+- **Session Protection:** If a driver has an `ACTIVE` parking session (`SessionStatus.ACTIVE`), the slot remains marked `OCCUPIED` even if sensor noise temporarily reports empty (`heldByActiveSession = true`).
+
+**Error Handling & HTTP Status Codes:**
+- `400 Bad Request`: Missing distance, negative distance, distance exceeding 400 cm, unknown sensor ID, sensor/slot ID mismatch, or malformed JSON payload.
+- `404 Not Found`: Unknown parking slot ID.
+- `500 Internal Server Error`: Generic internal or database failure (with clean JSON response excluding internal stack traces).
+
+**Configuration (`application.properties`):**
+```properties
+parking.sensor.occupancy-threshold-cm=50
+parking.sensor.max-distance-cm=400
+parking.sensor.min-slot-number=1
+parking.sensor.max-slot-number=8
+```
+
+**Testing:**
+- Backend REST endpoints, validation rules, mapped slot resolution, session overrides, and rapid update concurrency are fully verified using JUnit 5 and MockMvc integration tests (`SensorOccupancyControllerTest`, `SensorOccupancyServiceTest`, `SensorOccupancyIntegrationTest`).
+- ESP32 hardware communication was verified via simulated JSON HTTP POST payload requests sent to the backend.
+
 
 ---
+
 
 ## Running and Testing the Application
 

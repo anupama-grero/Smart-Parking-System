@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/gates")
+@RequestMapping("/api/legacy/gates")
 public class GateController {
 
     private volatile String entryGate = "CLOSED";

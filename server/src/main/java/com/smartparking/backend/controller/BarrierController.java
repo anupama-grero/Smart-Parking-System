@@ -9,6 +9,11 @@ import com.smartparking.backend.service.BarrierService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * BarrierController
+ * REST Controller for Security Guard Gate Control & Barrier Override operations.
+ * Part of the Security Guard Module (MVC Pattern - Controller Layer).
+ */
 @RestController
 @RequestMapping("/api")
 public class BarrierController {

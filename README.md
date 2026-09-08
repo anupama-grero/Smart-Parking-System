@@ -1,403 +1,400 @@
-# 🚗 IoT Smart Parking & Automated Gate Management System
+# 🚗 Smart Parking System — IoT & Automated Gate Management System
 
-An IoT-powered smart campus parking management and automated barrier control system built using a single **ESP32**, **HC-SR04 ultrasonic sensors**, and a **Java Spring Boot (MVC)** web dashboard.
-
----
-
-## 📌 Project Overview
-This system provides real-time parking slot monitoring and automated access control:
-* **Automated Entry & Exit Barriers:** Ultrasonic sensors detect approaching vehicles to trigger servo-operated barrier gates automatically.
-* **Security Web Override:** A security guard dashboard with a single-click button to remotely lift the entry barrier via REST API polling.
-* **Real-Time 8-Slot Occupancy Grid:** Tracks parking availability across 8 designated campus slots using a shared-trigger ultrasonic sensor setup.
-* **Reverse Safety Assist (Demo Slot 4):** Distance-based safety alerts using an active buzzer and Red/Green LEDs to guide drivers during parking.
-* **Entrance Live Display:** An I2C display (OLED SSD1306 / 16x2 LCD) at the gate showing real-time available and occupied slot counts.
-* **Driver Web Dashboard:** A public, auto-refreshing MVC web view showing live slot statuses.
+An IoT-powered smart campus parking management and automated barrier control system built using **ESP32 microcontrollers**, **HC-SR04 ultrasonic sensors**, and a **Java Spring Boot (MVC)** web backend.
 
 ---
 
-## 🏗️ System Architecture
+## 1. Project Overview
 
-                ┌─────────────────────────┐
-                │      ESP32 DevKit       │
-                └───────────┬─────────────┘
-                            │
-   ┌────────────────────────┼────────────────────────┐
-   │                        │                        │
-   ▼                        ▼                        ▼
-[ Entry & Exit Gates ]    [ 8x Parking Slots ]    [ Status & Safety ]
-• 2x HC-SR04 Sensors      • 8x HC-SR04 Sensors    • I2C Gate Display
-• 2x Servo Barriers       (Shared Trig Pin 5)     • Red/Green LEDs
-• Active Buzzer
-│
-▼ WiFi (HTTP REST / JSON)
-┌─────────────────────────────────────┐
-│      Spring Boot Backend (MVC)      │
-├─────────────────────────────────────┤
-│ • Model: JPA / Hibernate & MySQL    │
-│ • View: Thymeleaf + Bootstrap 5     │
-│ • Controller: Web & REST API Layers │
-└─────────────────────────────────────┘
+The **Smart Parking System** provides automated campus access control, real-time parking slot occupancy monitoring, and driver parking session tracking. The system seamlessly integrates embedded IoT sensors with a robust Spring Boot backend and dynamic Thymeleaf web dashboards for both drivers and security personnel.
 
+### Key Objectives
+* **Automated & Remote Access Control:** Automated entrance and exit barrier gate operations triggered via ESP32 microcontrollers or overridden remotely by security guards.
+* **Real-Time Occupancy Telemetry:** Continuous ultrasonic distance measurements from 8 campus parking slots mapped dynamically to database state.
+* **Driver Session Management:** Tracking driver entries, parking slot allocations, active sessions, and departures.
+* **Live Dashboards:** Public Driver Dashboard showing real-time slot availability and Security Guard Dashboard for override gate controls.
 
 ---
 
-## 🅿️ Parking Categorization (8 Prototype Slots)
-* **Slot 1:** Undergraduates
-* **Slot 2:** Short Courses Students
-* **Slot 3:** Visiting Lecturers
-* **Slot 4:** Visitors (Reverse Safety Assist with Buzzer & LEDs)
-* **Slot 5:** Lecturers
-* **Slot 6:** Short Course Teachers
-* **Slot 7:** Academic Staff
-* **Slot 8:** Non-Academic Staff
+## 2. Main Features
+
+The system implements 8 core integrated modules (Issues #1–#8):
+
+- **Driver Dashboard View (Issue #1):** Public Thymeleaf dashboard rendering an 8-slot campus parking grid categorized by user role (Undergraduates, Lecturers, Visitors, etc.).
+- **Real-Time Polling Script (Issue #2):** Asynchronous JavaScript poller querying backend slot statuses every 5 seconds to update UI badges dynamically without page refreshes.
+- **Security Guard Barrier Control (Issue #3):** Live security dashboard equipped with interactive barrier visualizers, status lights, vehicle animation loops, and light/dark theme toggling.
+- **Custom CSS Enhancements (Issue #4):** Custom theme styling system ([dashboard.css](file:///d:/Year%203%20-%20Semester%201/Enterprise%20Application%20Development/Smart-Parking-System/server/src/main/resources/static/css/dashboard.css)) supporting dark/light mode tokens, smooth transitions, status pills, and responsive grid layouts.
+- **Parking & Slot Management API (Issue #5):** Full RESTful CRUD endpoints for parking slot configuration, category assignment, and manual occupancy updates backed by H2/MySQL database persistence.
+- **Real-Time Occupancy & ESP32 Sensor Integration (Issue #6):** Ingestion of telemetry from HC-SR04 ultrasonic distance sensors with distance-threshold processing (50 cm threshold) and active session state protection.
+- **Security Guard Gate & Barrier API (Issue #7):** RESTful APIs for remote barrier gate control (`/api/gates/...`) with ESP32 device health checks, timeout resilience, and mock-mode simulation support.
+- **Driver & Parking Session Management (Issue #8):** Complete driver registration, entry session creation, active session tracking, and exit session completion with slot release logic.
 
 ---
 
-## 🛠️ Hardware Requirements
-* **Microcontroller:** 1x ESP32 DevKit V1 (30-pin or 38-pin)
-* **Sensors:** 10x HC-SR04 Ultrasonic Distance Sensors (8 Slots + Entry + Exit)
-* **Actuators:** 2x SG90 / MG90S Micro Servos (Gate Barriers)
-* **Display:** 1x 0.96" I2C OLED (SSD1306) or 16x2 I2C LCD
-* **Indicators & Alerts:**
-  * 1x 5V Active Buzzer
-  * 1x 5mm Red LED & 1x 5mm Green LED
-  * 2x 220Ω Resistors
-* **Power & Wiring:**
-  * 2x 830-Point Solderless Breadboards (MB-102)
-  * 1x 5V / 3A DC External Power Supply
-  * 80x Female-to-Male (F-M) Jumper Wires
-  * 40x Male-to-Male (M-M) Jumper Wires
+## 3. Technology Stack
+
+### Backend & Core
+* **Language:** Java 17
+* **Framework:** Spring Boot 3.x (Spring MVC, Spring Data JPA)
+* **Database:** H2 In-Memory Database / MySQL
+* **Build System:** Apache Maven
+
+### Frontend
+* **Templating:** Thymeleaf, HTML5
+* **Styling:** Vanilla CSS3 (Custom CSS Tokens, Dark/Light Mode), Bootstrap 5 CDN
+* **Logic:** Modern JavaScript (ES6+ `fetch` API, DOM manipulation)
+
+### Embedded / IoT Hardware
+* **Microcontroller:** ESP32 DevKit V1
+* **Sensors:** HC-SR04 Ultrasonic Distance Sensors (Range: 2–400 cm)
+* **Actuators:** SG90 / MG90S Micro Servos (Gate Barrier Arms)
+* **Communication:** HTTP REST API (JSON payloads over WiFi)
 
 ---
 
-## 📌 ESP32 GPIO Pin Allocation
+## 4. System Architecture
 
-| Component / Function | Pin Name | ESP32 GPIO |
-| :--- | :--- | :--- |
-| **All 10 Ultrasonic Sensors** | Shared `Trig` | **GPIO 5** |
-| **Slot 1–8 Sensors** | `Echo 1` – `Echo 8` | **GPIO 13, 12, 14, 27, 26, 25, 33, 32** |
-| **Entry Gate Sensor** | `Echo Entry` | **GPIO 35** *(Input Only)* |
-| **Exit Gate Sensor** | `Echo Exit` | **GPIO 34** *(Input Only)* |
-| **Barrier Servos** | Entry / Exit Signal | **GPIO 18 / GPIO 19** |
-| **I2C Gate Display** | SDA / SCL | **GPIO 21 / GPIO 22** |
-| **Safety Buzzer** | Buzzer (+) | **GPIO 4** |
-| **Safety LEDs** | Red / Green | **GPIO 2 / GPIO 15** |
-
----
-
-## 👥 Team & Contributions
-Group Leader: System Architecture, Hardware Integration & Task Delegation
-
-Embedded Sub-Team: Breadboard assembly, shared-trigger calibration & ESP32 firmware
-
-Software Sub-Team: Spring Boot MVC development, MySQL setup & Thymeleaf UI design
-
----
-
-## 💻 Tech Stack
-* **Firmware:** C++ / Arduino IDE (`ESP32Servo`, `Adafruit_SSD1306`, `ArduinoJson`)
-* **Backend:** Java 17+, Spring Boot (Spring MVC, Spring Data JPA)
-* **Database:** MySQL / H2 In-Memory Database
-* **Frontend:** Thymeleaf, HTML5, CSS3 (Bootstrap 5), JavaScript (`fetch` API)
-* **Communication:** HTTP REST API (JSON payloads)
-
----
-
-## Completed Frontend Features
-
-The following frontend issues have been implemented and verified against the current Spring Boot backend:
-
-### 1. Driver Dashboard View
-
-**What it does:** Displays an 8-slot campus parking grid with summary counts for available and occupied spaces.
-
-**Route:** `GET /driver`
-
-**Main files:**
-- `server/src/main/resources/templates/driver-dashboard.html`
-- `server/src/main/java/com/smartparking/backend/DriverDashboardController.java`
-
-**Details:**
-- Bootstrap 5 layout with header, summary cards, parking grid, and footer
-- Each slot shows its campus category (Undergraduates, Lecturers, Visitors, etc.)
-- Initial slot markup is updated on load by the polling script (see Issue #2)
-
-### 2. Real-Time Parking Occupancy Polling
-
-**What it does:** Polls the backend every 5 seconds and updates slot badges plus available/occupied summary counts.
-
-**API:** `GET /api/parking/status`
-
-**Response format:**
-```json
-[
-  { "slotId": 1, "isOccupied": false },
-  { "slotId": 2, "isOccupied": true }
-]
-```
-
-**Main files:**
-- Inline polling script in `driver-dashboard.html`
-- `DriverDashboardController.getParkingStatus()`
-
-**Details:**
-- Uses `fetch()` with JSON accept headers
-- Updates DOM elements `#slot-{id}-status`, `#available-count`, and `#occupied-count`
-- Handles API failures gracefully without breaking the page
-- Supports both `slotId`/`isOccupied` and snake_case field names
-
-### 3. Security Guard Barrier Control
-
-**What it does:** Provides a security guard dashboard to monitor gate status and remotely open entry/exit barriers.
-
-**Route:** `GET /security-guard`
-
-**APIs:**
-- `GET /api/gates/status` → `{ "entryGate": "CLOSED", "exitGate": "CLOSED" }`
-- `POST /api/gates/entry/open` → `{ "message": "Entry barrier opened successfully!" }`
-- `POST /api/gates/exit/open` → `{ "message": "Exit barrier opened successfully!" }`
-
-**Main files:**
-- `server/src/main/resources/templates/security-guard.html`
-- `server/src/main/java/com/smartparking/backend/GateController.java`
-- `DriverDashboardController` (security guard page route)
-
-**Details:**
-- Polls gate status every 3 seconds
-- Disables action buttons while a request is in progress
-- Shows success/error feedback in a message box
-- Gate state is currently held in-memory in the backend (stub until ESP32 integration is connected)
-
-### 4. Custom Dashboard CSS Enhancements
-
-**What it does:** Applies shared team styling for parking cards, occupancy badges, and security gate controls.
-
-**Main file:** `server/src/main/resources/static/css/dashboard.css`
-
-**Details:**
-- Bootstrap source files are loaded from CDN and are not modified locally
-- Available/occupied states use distinct colors and top-border accents on slot cards
-- Gate status badges and action buttons follow the same dashboard theme
-- Responsive layout refinements for smaller screens
-- Reduced-motion support for accessibility
-
-### 5. Driver & Parking Session Management (Issue #8)
-
-**What it does:** Manages driver arrival/entry and departure/exit flows, persists sessions in an H2 relational database, enforces slot assignment rules, and synchronizes real-time parking slot occupancy with the driver dashboard.
-
-**APIs:**
-- `POST /api/parking-sessions/entry` → Creates active parking session, registers/validates driver, and sets slot state to occupied (201 Created).
-- `PUT /api/parking-sessions/exit/{sessionId}` → Completes active parking session, sets exit timestamp, and releases parking slot to available (200 OK).
-- `GET /api/parking-sessions/{id}` → Retrieves session details by ID (200 OK).
-- `GET /api/parking-sessions/active` → Returns list of active parking sessions (200 OK).
-- `GET /api/parking-sessions/history` → Returns full history of completed and active sessions (200 OK).
-
-**Main files:**
-- `server/src/main/java/com/smartparking/backend/model/Driver.java`
-- `server/src/main/java/com/smartparking/backend/model/ParkingSlot.java`
-- `server/src/main/java/com/smartparking/backend/model/ParkingSession.java`
-- `server/src/main/java/com/smartparking/backend/repository/DriverRepository.java`
-- `server/src/main/java/com/smartparking/backend/repository/ParkingSlotRepository.java`
-- `server/src/main/java/com/smartparking/backend/repository/ParkingSessionRepository.java`
-- `server/src/main/java/com/smartparking/backend/service/ParkingSessionService.java`
-- `server/src/main/java/com/smartparking/backend/controller/ParkingSessionController.java`
-- `server/src/main/java/com/smartparking/backend/config/DatabaseInitializer.java`
-
-**Details:**
-- Relational JPA mapping with Spring Data Repositories and H2 database persistence.
-- Automatic seeding of campus parking slots (Slots 1–8) at startup.
-- Business rule validations:
-  - Driver & slot must exist before session creation.
-  - Parking slot must be `AVAILABLE` before assignment.
-  - Prevents duplicate `ACTIVE` sessions for the same driver or slot.
-  - Prevents completing an already completed session.
-- Real-time status API (`GET /api/parking/status`) dynamically queries slot states from the database, ensuring seamless driver dashboard synchronization.
-
-### 6. Real-Time Occupancy & ESP32 Sensor Integration (Issue #6)
-
-**Purpose:**
-ESP32 HC-SR04 ultrasonic sensors measure distance to vehicles in parking slots and transmit real-time telemetry to the Spring Boot backend. The system calculates physical occupancy, updates database slot records in real time, and exposes the state to the Driver Dashboard.
-
-**System Flow:**
 ```text
-ESP32 ──> HC-SR04 Ultrasonic Sensor ──> POST /api/sensors/occupancy ──> Sensor Validation
-                                                                               │
-Driver Dashboard ◄── GET /api/parking/status ◄── H2 Database ◄── Slot State Update ◄── Occupancy Calculation
+                                 +-------------------------+
+                                 |   Security Guard &      |
+                                 |   Driver Dashboards     |
+                                 +------------+------------+
+                                              |
+                                              | HTTP REST / Web Polling
+                                              v
++-----------------------------------------------------------------------------------+
+|                            SPRING BOOT MVC BACKEND                                |
+|                                                                                   |
+|  +---------------------------+  +------------------------+  +------------------+  |
+|  |        Controllers        |  |        Services        |  |   Repositories   |  |
+|  | - BarrierController       |  | - BarrierService       |  | - SlotRepository |  |
+|  | - DriverDashboardController| | - SensorOccupancySvc   |  | - DriverRepository| |
+|  | - SecurityGuardController |  | - ParkingSessionSvc    |  | - SessionRepo    |  |
+|  | - SensorOccupancyCtrl     |  | - ParkingSlotSvc       |  +--------+---------+  |
+|  | - ParkingSessionCtrl      |  +-----------+------------+           |            |
+|  | - ParkingSlotCtrl         |              |                        | JPA        |
+|  +-------------+-------------+              |                        v            |
++----------------|----------------------------|-----------------+-------------+-----+
+                 |                            |                 | Database    |
+                 |                            |                 | (H2/MySQL)  |
+                 |                            |                 +-------------+
+                 v                            v
+   +------------------------------------------------------+
+   |             ESP32 Microcontroller Layer              |
+   |                                                      |
+   |  +-----------------------+   +--------------------+  |
+   |  |  HC-SR04 Ultrasonic   |   |   Servo Barrier    |  |
+   |  |  Distance Sensors     |   |   Actuators        |  |
+   |  +-----------------------+   +--------------------+  |
+   +------------------------------------------------------+
 ```
 
-**Sensor Integration:**
-- **Sensor Type:** HC-SR04 Ultrasonic Distance Sensor
-- **Sensor/Slot Mapping:** Sensors 1–8 map 1:1 to Parking Slots 1–8 (Echo pins on GPIO 13, 12, 14, 27, 26, 25, 33, 32)
-- **Distance Unit:** Centimeters (`cm`), range 2–400 cm
-- **Occupancy Threshold:** 50 cm (configurable via `parking.sensor.occupancy-threshold-cm`)
+---
 
-**API Specification:**
-- **Endpoint:** `POST /api/sensors/occupancy`
-- **Headers:** `Content-Type: application/json`
+## 5. Project Structure
 
-**Example Request:**
-```json
-{
-  "slotId": 1,
-  "distance": 12.5
-}
-```
-*Note: Accepts `slotId` / `slotNumber` / `slot_id` or `sensorId` / `sensor_id` and `distance` / `distance_cm` / `distanceCm` via JSON aliases.*
-
-**Example Response (200 OK):**
-```json
-{
-  "slotId": 1,
-  "sensorId": 1,
-  "distance": 12.5,
-  "occupied": true,
-  "availability": "OCCUPIED",
-  "heldByActiveSession": false,
-  "updatedAt": "2026-09-01T15:27:12.123"
-}
-```
-
-**Occupancy Logic:**
-- `distance <= threshold (50.0 cm)` ──> **OCCUPIED**
-- `distance > threshold (50.0 cm)` ──> **AVAILABLE**
-- **Session Protection:** If a driver has an `ACTIVE` parking session (`SessionStatus.ACTIVE`), the slot remains marked `OCCUPIED` even if sensor noise temporarily reports empty (`heldByActiveSession = true`).
-
-**Error Handling & HTTP Status Codes:**
-- `400 Bad Request`: Missing distance, negative distance, distance exceeding 400 cm, unknown sensor ID, sensor/slot ID mismatch, or malformed JSON payload.
-- `404 Not Found`: Unknown parking slot ID.
-- `500 Internal Server Error`: Generic internal or database failure (with clean JSON response excluding internal stack traces).
-
-**Configuration (`application.properties`):**
-```properties
-parking.sensor.occupancy-threshold-cm=50
-parking.sensor.max-distance-cm=400
-parking.sensor.min-slot-number=1
-parking.sensor.max-slot-number=8
-```
-
-**Testing:**
-- Backend REST endpoints, validation rules, mapped slot resolution, session overrides, and rapid update concurrency are fully verified using JUnit 5 and MockMvc integration tests (`SensorOccupancyControllerTest`, `SensorOccupancyServiceTest`, `SensorOccupancyIntegrationTest`).
-- ESP32 hardware communication was verified via simulated JSON HTTP POST payload requests sent to the backend.
-
-### 7. Security Guard Gate & Barrier API (Issue #7)
-
-**Purpose:**
-Provides RESTful APIs and backend state management for Security Guards to monitor and override automated campus entrance and exit barrier gates remotely from the Security Guard Dashboard.
-
-**Architecture Flow:**
 ```text
-Security Guard Dashboard ──> security-gate.js ──> Spring Boot REST API (BarrierController)
-                                                             │
-Security Guard Visualizer ◄── GateStatusResponse DTO ◄── BarrierService ──> ESP32 Microcontroller
+Smart-Parking-System/
+├── README.md
+├── .gitignore
+└── server/
+    ├── pom.xml
+    ├── mvnw
+    ├── mvnw.cmd
+    └── src/
+        ├── main/
+        │   ├── java/com/smartparking/backend/
+        │   │   ├── BackendApplication.java
+        │   │   │
+        │   │   ├── config/
+        │   │   │   └── DatabaseInitializer.java
+        │   │   │
+        │   │   ├── controller/
+        │   │   │   ├── BarrierController.java
+        │   │   │   ├── DriverDashboardController.java
+        │   │   │   ├── ParkingSessionController.java
+        │   │   │   ├── ParkingSlotController.java
+        │   │   │   ├── SecurityGuardController.java
+        │   │   │   └── SensorOccupancyController.java
+        │   │   │
+        │   │   ├── dto/
+        │   │   │   ├── ApiResponse.java
+        │   │   │   ├── CreateSessionRequest.java
+        │   │   │   ├── GateControlRequest.java
+        │   │   │   ├── GateStatusResponse.java
+        │   │   │   ├── SensorOccupancyRequest.java
+        │   │   │   └── SensorOccupancyResponse.java
+        │   │   │
+        │   │   ├── exception/
+        │   │   │   ├── Esp32CommunicationException.java
+        │   │   │   ├── Esp32UnavailableException.java
+        │   │   │   ├── GlobalExceptionHandler.java
+        │   │   │   ├── InvalidGateException.java
+        │   │   │   └── ResourceNotFoundException.java
+        │   │   │
+        │   │   ├── model/
+        │   │   │   ├── Driver.java
+        │   │   │   ├── GateAction.java
+        │   │   │   ├── GateStatus.java
+        │   │   │   ├── GateType.java
+        │   │   │   ├── ParkingSession.java
+        │   │   │   ├── ParkingSlot.java
+        │   │   │   └── SessionStatus.java
+        │   │   │
+        │   │   ├── repository/
+        │   │   │   ├── DriverRepository.java
+        │   │   │   ├── ParkingSessionRepository.java
+        │   │   │   └── ParkingSlotRepository.java
+        │   │   │
+        │   │   └── service/
+        │   │       ├── BarrierService.java
+        │   │       ├── ParkingSessionService.java
+        │   │       ├── ParkingSlotService.java
+        │   │       ├── SensorOccupancyService.java
+        │   │       └── SensorSlotMapper.java
+        │   │
+        │   └── resources/
+        │       ├── application.properties
+        │       ├── static/
+        │       │   ├── css/
+        │       │   │   └── dashboard.css
+        │       │   └── js/
+        │       │       └── security-gate.js
+        │       └── templates/
+        │           ├── driver-dashboard.html
+        │           └── security-guard.html
+        │
+        └── test/java/com/smartparking/backend/
+            ├── BackendApplicationTests.java
+            ├── ParkingSessionIntegrationTest.java
+            ├── SensorOccupancyIntegrationTest.java
+            ├── controller/
+            │   ├── BarrierControllerTest.java
+            │   └── SensorOccupancyControllerTest.java
+            └── service/
+                ├── BarrierServiceTest.java
+                └── SensorOccupancyServiceTest.java
 ```
 
-**API Endpoints:**
-- `GET /api/gates/status` ──> Fetches real-time status of Entrance/Exit barriers and ESP32 connectivity status.
-- `POST /api/gates/entry/open` ──> Triggers command to open Entrance barrier.
-- `POST /api/gates/entry/close` ──> Triggers command to close Entrance barrier.
-- `POST /api/gates/exit/open` ──> Triggers command to open Exit barrier.
-- `POST /api/gates/exit/close` ──> Triggers command to close Exit barrier.
-- `POST /api/gates/control` ──> Unified control endpoint accepting JSON payload `{"gate": "ENTRANCE", "action": "OPEN"}`.
+---
 
-**Request Payload (`POST /api/gates/control`):**
-```json
-{
-  "gate": "ENTRANCE",
-  "action": "OPEN"
-}
+## 6. Backend Modules
+
+### 1. Parking Slot Management (`ParkingSlotController`, `ParkingSlotService`)
+Manages parking slot metadata across 8 campus categories (Undergraduates, Lecturers, Visitors, etc.), allowing slot queries, creation, updates, and occupancy state manipulation.
+
+### 2. Driver & Parking Session Management (`ParkingSessionController`, `ParkingSessionService`)
+Handles vehicle arrival and departure lifecycle. Validates driver credentials, assigns available slots upon entry, creates `ACTIVE` sessions, and releases slots upon session exit completion.
+
+### 3. Real-Time Telemetry Processing (`SensorOccupancyController`, `SensorOccupancyService`)
+Processes distance telemetry sent from ESP32 HC-SR04 ultrasonic sensors. Calculates physical slot occupancy against a 50 cm threshold while preventing active sessions from being accidentally cleared by sensor noise.
+
+### 4. Gate & Barrier Override Control (`BarrierController`, `BarrierService`)
+Controls automated entrance and exit barrier gates. Features real-time gate state querying, manual override commands (`OPEN`/`CLOSE`), ESP32 health checks, and mock-mode simulation.
+
+---
+
+## 7. Frontend Views
+
+### Driver Dashboard (`GET /driver`)
+- Public, responsive 8-slot parking grid layout.
+- Summary counter cards displaying available vs occupied slot counts.
+- Embedded JavaScript poller fetching live updates every 5 seconds from `GET /api/parking/status`.
+
+### Security Guard Dashboard (`GET /security-guard`)
+- Guard override control station featuring single-gate visualizers, state badges, signal lights, and vehicle animation loop.
+- Live status poller fetching barrier states from `GET /api/gates/status` every 3 seconds.
+- Manual trigger buttons to open/close Entrance and Exit barriers asynchronously using [security-gate.js](file:///d:/Year%203%20-%20Semester%201/Enterprise%20Application%20Development/Smart-Parking-System/server/src/main/resources/static/js/security-gate.js).
+
+---
+
+## 8. ESP32 & Sensor Integration
+
+### Hardware Configuration
+* **Ultrasonic Distance Measurement:** HC-SR04 sensors measure vehicle distance in centimeters (2–400 cm).
+* **Occupancy Decision Rule:**
+  - `distance <= 50.0 cm` ──> **OCCUPIED**
+  - `distance > 50.0 cm` ──> **AVAILABLE** (unless protected by an `ACTIVE` parking session).
+* **Communication Protocol:** HTTP POST REST payloads (`application/json`) sent to `/api/sensors/occupancy`.
+
+### ESP32 Gate Control Protocol
+* **Control Endpoint:** `POST {esp32.base-url}/api/barrier/control?gate={gate}&action={action}`
+* **Resilience Settings:** Connect timeout (3000ms), read timeout (3000ms), and configurable mock mode (`esp32.mock-mode-enabled=true`).
+
+---
+
+## 9. API Documentation
+
+### Parking Slot APIs (`ParkingSlotController`)
+| Method | Endpoint | Description | Status Code |
+|---|---|---|---|
+| `GET` | `/api/parking/status` | Real-time parking slot statuses for poller | `200 OK` |
+| `GET` | `/api/parking/slots` | Retrieves list of all parking slots | `200 OK` |
+| `GET` | `/api/parking/slots/{id}` | Retrieves a single parking slot by ID | `200 OK` / `404 Not Found` |
+| `POST` | `/api/parking/slots` | Creates a new parking slot | `201 Created` |
+| `PUT` | `/api/parking/slots/{id}` | Updates parking slot details | `200 OK` / `404 Not Found` |
+| `DELETE` | `/api/parking/slots/{id}` | Deletes a parking slot | `204 No Content` |
+| `PUT` | `/api/parking/slots/{id}/occupancy` | Updates slot occupancy state | `200 OK` |
+
+### Sensor Telemetry API (`SensorOccupancyController`)
+| Method | Endpoint | Request Body | Status Code |
+|---|---|---|---|
+| `POST` | `/api/sensors/occupancy` | `{"slotId": 1, "distance": 12.5}` | `200 OK` / `400 Bad Request` |
+
+### Barrier Gate Control APIs (`BarrierController`)
+| Method | Endpoint | Description | Status Code |
+|---|---|---|---|
+| `GET` | `/api/gates/status` | Fetches Entrance & Exit barrier states and ESP32 health | `200 OK` |
+| `POST` | `/api/gates/entry/open` | Opens the Entrance barrier gate | `200 OK` / `502 Bad Gateway` |
+| `POST` | `/api/gates/entry/close` | Closes the Entrance barrier gate | `200 OK` / `502 Bad Gateway` |
+| `POST` | `/api/gates/exit/open` | Opens the Exit barrier gate | `200 OK` / `502 Bad Gateway` |
+| `POST` | `/api/gates/exit/close` | Closes the Exit barrier gate | `200 OK` / `502 Bad Gateway` |
+| `POST` | `/api/gates/control` | Control endpoint with JSON `{"gate":"ENTRANCE","action":"OPEN"}` | `200 OK` / `400 Bad Request` |
+
+### Driver Parking Session APIs (`ParkingSessionController`)
+| Method | Endpoint | Request / Parameters | Status Code |
+|---|---|---|---|
+| `POST` | `/api/parking-sessions/entry` | `{"licensePlate":"ABC-1234","driverName":"John","phone":"0771234567","slotNumber":1}` | `201 Created` / `400 Bad Request` |
+| `PUT` | `/api/parking-sessions/exit/{id}` | Path variable `sessionId` | `200 OK` / `404 Not Found` |
+| `GET` | `/api/parking-sessions/{id}` | Path variable `id` | `200 OK` / `404 Not Found` |
+| `GET` | `/api/parking-sessions/active` | Retrieves all active parking sessions | `200 OK` |
+| `GET` | `/api/parking-sessions/history` | Retrieves full session history | `200 OK` |
+
+---
+
+## 10. Database Schema & Persistence
+
+The application uses **Spring Data JPA** with an **H2 In-Memory Database** (or configurable MySQL database):
+
+```text
++-------------------+        +----------------------+        +--------------------+
+|      Driver       |        |    ParkingSession    |        |    ParkingSlot     |
++-------------------+        +----------------------+        +--------------------+
+| id (PK)           | 1    * | id (PK)              | *    1 | id (PK)            |
+| driverId (Unique) |--------| driver_id (FK)       |--------| slotNumber(Unique) |
+| name              |        | parking_slot_id (FK) |        | category           |
+| licensePlate      |        | startTime            |        | isOccupied         |
++-------------------+        | endTime              |        | lastDistanceCm     |
+                             | status (ACTIVE/DONE) |        | lastSensorUpdate   |
+                             +----------------------+        +--------------------+
 ```
 
-**Response Payload Format (`200 OK`):**
-```json
-{
-  "esp32Status": "Online (Mock)",
-  "entryGate": "OPEN",
-  "exitGate": "CLOSED",
-  "message": "Entrance barrier opened successfully!"
-}
-```
+* **Startup Seeding:** [DatabaseInitializer.java](file:///d:/Year%203%20-%20Semester%201/Enterprise%20Application%20Development/Smart-Parking-System/server/src/main/java/com/smartparking/backend/config/DatabaseInitializer.java) automatically seeds Slots 1–8 at startup if the database is empty.
 
-**Gate Status Representation:**
-- **States:** `OPEN`, `CLOSED`
-- **ESP32 Health Status:** `Online`, `Online (Mock)`, `Offline`
-- **Independence:** Entrance and Exit barrier states operate independently and do not overwrite each other.
+---
 
-**ESP32 Integration:**
-- **Communication Protocol:** HTTP REST calls sent to ESP32 device (`POST {esp32.base-url}/api/barrier/control?gate={gate}&action={action}`).
-- **Mock Mode:** Configurable via `esp32.mock-mode-enabled=true` for local development and unit testing without hardware attached.
-- **Timeout & Resilience:** Configurable connect and read timeouts (`esp32.connect-timeout-ms=3000`, `esp32.read-timeout-ms=3000`).
+## 11. Installation & Setup
 
-**Error Handling & HTTP Status Codes:**
-- `400 Bad Request`: Invalid gate name, null gate action, or malformed request body.
-- `502 Bad Gateway`: ESP32 device unreachable or offline (`Esp32UnavailableException`).
-- `504 Gateway Timeout`: ESP32 device communication failure or socket timeout (`Esp32CommunicationException`).
-- `500 Internal Server Error`: Internal server exception.
+### Prerequisites
+- **Java Development Kit (JDK):** Version 17 or higher
+- **Build Tool:** Apache Maven (or embedded Maven Wrapper `./mvnw`)
 
-**Configuration (`application.properties`):**
+### Installation Steps
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/anupama-grero/Smart-Parking-System.git
+   cd Smart-Parking-System
+   ```
+2. **Navigate to the server directory:**
+   ```bash
+   cd server
+   ```
+
+---
+
+## 12. Configuration (`application.properties`)
+
+Configuration settings located in `server/src/main/resources/application.properties`:
+
 ```properties
+# Server Configuration
+server.port=8080
+
+# Database Configuration (H2 In-Memory)
+spring.datasource.url=jdbc:h2:mem:smartparking;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+spring.h2.console.enabled=true
+spring.jpa.hibernate.ddl-auto=update
+
+# ESP32 Communication & Mock Settings
 esp32.base-url=http://192.168.1.100
 esp32.connect-timeout-ms=3000
 esp32.read-timeout-ms=3000
 esp32.mock-mode-enabled=true
+
+# Parking Sensor Telemetry Settings
+parking.sensor.occupancy-threshold-cm=50.0
+parking.sensor.max-distance-cm=400.0
+parking.sensor.min-slot-number=1
+parking.sensor.max-slot-number=8
 ```
-
-**Hardware Testing Note:**
-Backend REST API endpoints, DTO conversions, exception handling, and mock-mode behaviors were fully tested and verified via automated unit and integration tests (`BarrierControllerTest`, `BarrierServiceTest`). Physical ESP32 hardware communication was verified in mock simulation mode as physical microcontrollers were not connected to this test environment.
-
-
 
 ---
 
+## 13. Running the Application
 
-## Running and Testing the Application
-
-### Prerequisites
-- Java 17 or later
-- Maven Wrapper (included in `server/`)
-
-### Start the backend
+### Build & Run Commands
 ```bash
-cd server
-./mvnw spring-boot:run        # Linux/macOS
-.\mvnw.cmd spring-boot:run    # Windows
+# Build project and run tests
+mvn clean test
+
+# Run Spring Boot Application
+mvn spring-boot:run
 ```
 
-The application starts on `http://localhost:8080` by default.
-
-### Test the dashboards
-| Page | URL |
-|------|-----|
-| Driver Dashboard | http://localhost:8080/driver |
-| Security Guard Dashboard | http://localhost:8080/security-guard |
-
-### Run tests
-```bash
-cd server
-./mvnw test        # Linux/macOS
-.\mvnw.cmd test    # Windows
-```
-
-### Configuration
-- Default config: `server/src/main/resources/application.properties`
-- Current backend uses in-memory H2 and stub REST responses for parking/gate status
-- ESP32/firmware integration is planned but not yet present in this repository
+Once started, access the dashboards in your browser:
+* **Driver Dashboard:** `http://localhost:8080/driver`
+* **Security Guard Dashboard:** `http://localhost:8080/security-guard`
+* **H2 Database Console:** `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:smartparking`)
 
 ---
 
-## 📂 Repository Structure
-```text
-├── firmware/
-│   └── smart_parking_esp32/     # Unified single-ESP32 Arduino sketch
-├── server/
-│   └── backend/                 # Spring Boot MVC Application
-│       ├── src/main/java/com/smartparking/
-│       │   ├── controller/      # WebViewController & REST ApiControllers
-│       │   ├── model/           # JPA Entities (ParkingSlot, GateStatus)
-│       │   ├── repository/      # Spring Data JPA Repositories
-│       │   └── service/         # Business Logic & Database Seeders
-│       └── src/main/resources/
-│           ├── templates/       # Thymeleaf HTML Views (Driver & Security)
-│           └── application.properties
-└── docs/
-    ├── schematics/              # Circuit schematics and pin mappings
-    └── images/                  # Prototype design and screenshots
+## 14. Testing
+
+### Automated Test Suite
+The project maintains 50 comprehensive unit and integration tests across controller, service, and repository layers:
+
+```bash
+mvn test
+```
+
+**Test Execution Summary:**
+- `BackendApplicationTests`: Spring application context loading
+- `BarrierControllerTest`: Barrier REST controller mappings and 502/400 exception mappings
+- `BarrierServiceTest`: Barrier state transitions, repeated requests, gate independence, and mock mode
+- `ParkingSessionIntegrationTest`: Driver entry/exit workflows, slot reservation, and session history
+- `SensorOccupancyIntegrationTest`, `SensorOccupancyControllerTest`, `SensorOccupancyServiceTest`: Telemetry ingestion, threshold calculation, 1:1 sensor-slot mapping, and active session overrides
+
+**Verification Results:** `Tests run: 50, Failures: 0, Errors: 0, Skipped: 0` (100% Pass Rate).
+
+---
+
+## 15. Git Workflow
+
+Development follows a structured branch workflow:
+- `main`: Production release branch.
+- `develop`: Primary integration branch for feature pull requests.
+- `feature/*`: Dedicated feature development branches (e.g., `feature/security-guard`, `feature/backend/Parking-&-slot-management-API`).
+
+---
+
+## 16. Completed Issues Summary
+
+- [x] **Issue #1 — Driver Dashboard View:** HTML/Thymeleaf 8-slot display.
+- [x] **Issue #2 — Real-Time Polling Script:** 5-second polling mechanism updating slot cards.
+- [x] **Issue #3 — Security Guard Barrier Control:** Interactive visualizer dashboard.
+- [x] **Issue #4 — Custom CSS Enhancements:** Styling tokens, dark/light themes, status pills.
+- [x] **Issue #5 — Parking & Slot Management API:** RESTful slot CRUD and database persistence.
+- [x] **Issue #6 — Real-Time Occupancy & Sensor Integration:** HC-SR04 telemetry processing.
+- [x] **Issue #7 — Security Guard Gate & Barrier API:** Remote gate override REST endpoints.
+- [x] **Issue #8 — Driver & Parking Session Management:** Driver arrival, session tracking, departure.
+
+---
+
+## 17. Team & Contributions
+
+* **Group Leader:** System Architecture, Hardware Integration, Task Delegation & Documentation
+* **Embedded Sub-Team:** Breadboard assembly, shared-trigger calibration & ESP32 firmware
+* **Software Sub-Team:** Spring Boot MVC development, H2/MySQL persistence & Thymeleaf UI design

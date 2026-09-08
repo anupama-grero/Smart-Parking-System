@@ -279,6 +279,72 @@ parking.sensor.max-slot-number=8
 - Backend REST endpoints, validation rules, mapped slot resolution, session overrides, and rapid update concurrency are fully verified using JUnit 5 and MockMvc integration tests (`SensorOccupancyControllerTest`, `SensorOccupancyServiceTest`, `SensorOccupancyIntegrationTest`).
 - ESP32 hardware communication was verified via simulated JSON HTTP POST payload requests sent to the backend.
 
+### 7. Security Guard Gate & Barrier API (Issue #7)
+
+**Purpose:**
+Provides RESTful APIs and backend state management for Security Guards to monitor and override automated campus entrance and exit barrier gates remotely from the Security Guard Dashboard.
+
+**Architecture Flow:**
+```text
+Security Guard Dashboard ──> security-gate.js ──> Spring Boot REST API (BarrierController)
+                                                             │
+Security Guard Visualizer ◄── GateStatusResponse DTO ◄── BarrierService ──> ESP32 Microcontroller
+```
+
+**API Endpoints:**
+- `GET /api/gates/status` ──> Fetches real-time status of Entrance/Exit barriers and ESP32 connectivity status.
+- `POST /api/gates/entry/open` ──> Triggers command to open Entrance barrier.
+- `POST /api/gates/entry/close` ──> Triggers command to close Entrance barrier.
+- `POST /api/gates/exit/open` ──> Triggers command to open Exit barrier.
+- `POST /api/gates/exit/close` ──> Triggers command to close Exit barrier.
+- `POST /api/gates/control` ──> Unified control endpoint accepting JSON payload `{"gate": "ENTRANCE", "action": "OPEN"}`.
+
+**Request Payload (`POST /api/gates/control`):**
+```json
+{
+  "gate": "ENTRANCE",
+  "action": "OPEN"
+}
+```
+
+**Response Payload Format (`200 OK`):**
+```json
+{
+  "esp32Status": "Online (Mock)",
+  "entryGate": "OPEN",
+  "exitGate": "CLOSED",
+  "message": "Entrance barrier opened successfully!"
+}
+```
+
+**Gate Status Representation:**
+- **States:** `OPEN`, `CLOSED`
+- **ESP32 Health Status:** `Online`, `Online (Mock)`, `Offline`
+- **Independence:** Entrance and Exit barrier states operate independently and do not overwrite each other.
+
+**ESP32 Integration:**
+- **Communication Protocol:** HTTP REST calls sent to ESP32 device (`POST {esp32.base-url}/api/barrier/control?gate={gate}&action={action}`).
+- **Mock Mode:** Configurable via `esp32.mock-mode-enabled=true` for local development and unit testing without hardware attached.
+- **Timeout & Resilience:** Configurable connect and read timeouts (`esp32.connect-timeout-ms=3000`, `esp32.read-timeout-ms=3000`).
+
+**Error Handling & HTTP Status Codes:**
+- `400 Bad Request`: Invalid gate name, null gate action, or malformed request body.
+- `502 Bad Gateway`: ESP32 device unreachable or offline (`Esp32UnavailableException`).
+- `504 Gateway Timeout`: ESP32 device communication failure or socket timeout (`Esp32CommunicationException`).
+- `500 Internal Server Error`: Internal server exception.
+
+**Configuration (`application.properties`):**
+```properties
+esp32.base-url=http://192.168.1.100
+esp32.connect-timeout-ms=3000
+esp32.read-timeout-ms=3000
+esp32.mock-mode-enabled=true
+```
+
+**Hardware Testing Note:**
+Backend REST API endpoints, DTO conversions, exception handling, and mock-mode behaviors were fully tested and verified via automated unit and integration tests (`BarrierControllerTest`, `BarrierServiceTest`). Physical ESP32 hardware communication was verified in mock simulation mode as physical microcontrollers were not connected to this test environment.
+
+
 
 ---
 

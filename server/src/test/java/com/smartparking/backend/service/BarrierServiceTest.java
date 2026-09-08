@@ -92,4 +92,29 @@ class BarrierServiceTest {
             realHardwareService.openEntranceBarrier();
         });
     }
+
+    @Test
+    void testRepeatedGateOpenRequestHandledSafely() {
+        GateStatusResponse first = barrierService.openEntranceBarrier();
+        assertEquals("OPEN", first.getEntryGate());
+
+        GateStatusResponse second = barrierService.openEntranceBarrier();
+        assertEquals("OPEN", second.getEntryGate());
+        assertTrue(second.getMessage().toLowerCase().contains("opened"));
+    }
+
+    @Test
+    void testEntranceAndExitBarrierIndependence() {
+        barrierService.openEntranceBarrier();
+        assertEquals(GateStatus.OPEN, barrierService.getEntranceGateState());
+        assertEquals(GateStatus.CLOSED, barrierService.getExitGateState());
+
+        barrierService.openExitBarrier();
+        assertEquals(GateStatus.OPEN, barrierService.getEntranceGateState());
+        assertEquals(GateStatus.OPEN, barrierService.getExitGateState());
+
+        barrierService.closeEntranceBarrier();
+        assertEquals(GateStatus.CLOSED, barrierService.getEntranceGateState());
+        assertEquals(GateStatus.OPEN, barrierService.getExitGateState());
+    }
 }

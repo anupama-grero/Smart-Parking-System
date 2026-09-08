@@ -43,6 +43,14 @@ public class ParkingSlot {
         this.isOccupied = isOccupied;
     }
 
+    // Used in unit tests and manual initialization
+    public ParkingSlot(Long id, Integer slotNumber, String category, boolean isOccupied) {
+        this.id = id;
+        this.slotNumber = slotNumber;
+        this.category = category;
+        this.isOccupied = isOccupied;
+    }
+
     public Long getId() {
         return id;
     }

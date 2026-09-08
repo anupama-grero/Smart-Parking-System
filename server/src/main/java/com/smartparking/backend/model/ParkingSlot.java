@@ -32,36 +32,62 @@ public class ParkingSlot {
     @Column
     private LocalDateTime lastSensorUpdate;
 
-    public ParkingSlot() {}
+    // Required by JPA
+    public ParkingSlot() {
+    }
 
+    // Used when creating a new parking slot
     public ParkingSlot(Integer slotNumber, String category, boolean isOccupied) {
         this.slotNumber = slotNumber;
         this.category = category;
         this.isOccupied = isOccupied;
     }
 
-    public ParkingSlot(Long id, Integer slotNumber, String category, boolean isOccupied) {
-        this.id = id;
-        this.slotNumber = slotNumber;
-        this.category = category;
-        this.isOccupied = isOccupied;
+    public Long getId() {
+        return id;
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public Integer getSlotNumber() { return slotNumber; }
-    public void setSlotNumber(Integer slotNumber) { this.slotNumber = slotNumber; }
+    public Integer getSlotNumber() {
+        return slotNumber;
+    }
 
-    public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
+    public void setSlotNumber(Integer slotNumber) {
+        this.slotNumber = slotNumber;
+    }
 
-    public boolean isOccupied() { return isOccupied; }
-    public void setOccupied(boolean occupied) { isOccupied = occupied; }
+    public String getCategory() {
+        return category;
+    }
 
-    public Double getLastDistanceCm() { return lastDistanceCm; }
-    public void setLastDistanceCm(Double lastDistanceCm) { this.lastDistanceCm = lastDistanceCm; }
+    public void setCategory(String category) {
+        this.category = category;
+    }
 
-    public LocalDateTime getLastSensorUpdate() { return lastSensorUpdate; }
-    public void setLastSensorUpdate(LocalDateTime lastSensorUpdate) { this.lastSensorUpdate = lastSensorUpdate; }
+    public boolean isOccupied() {
+        return isOccupied;
+    }
+
+    public void setOccupied(boolean occupied) {
+        isOccupied = occupied;
+    }
+
+    public Double getLastDistanceCm() {
+        return lastDistanceCm;
+    }
+
+    public void setLastDistanceCm(Double lastDistanceCm) {
+        this.lastDistanceCm = lastDistanceCm;
+    }
+
+    public LocalDateTime getLastSensorUpdate() {
+        return lastSensorUpdate;
+    }
+
+    public void setLastSensorUpdate(LocalDateTime lastSensorUpdate) {
+        this.lastSensorUpdate = lastSensorUpdate;
+    }
 }

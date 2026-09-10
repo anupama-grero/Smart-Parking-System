@@ -2,6 +2,7 @@ package com.smartparking.backend.model;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Column;
@@ -25,6 +26,7 @@ public class ParkingSession {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "driver_pk_id", nullable = false)
+    @JsonIgnoreProperties("sessions")
     private Driver driver;
 
     @ManyToOne(optional = false)

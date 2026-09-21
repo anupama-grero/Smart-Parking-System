@@ -113,19 +113,40 @@
         .brand-badge {
             display: inline-flex;
             align-items: center;
-            gap: 12px;
-            font-size: 17px;
-            font-weight: 800;
-            color: var(--text-primary);
-            letter-spacing: -0.3px;
+            gap: 14px;
         }
 
-        .brand-icon {
-            font-size: 22px;
-            background: linear-gradient(135deg, var(--primary-blue), #60a5fa);
+        .brand-icon-box {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 46px;
+            height: 46px;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(96, 165, 250, 0.2));
+            border: 1.5px solid rgba(59, 130, 246, 0.5);
+            border-radius: 14px;
+            font-size: 24px;
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.25);
+            flex-shrink: 0;
+        }
+
+        .brand-text-highlight {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #60a5fa 0%, #38bdf8 50%, #93c5fd 100%);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 2px 10px rgba(37, 99, 235, 0.35));
+        }
+
+        body:not(.dark-theme) .brand-text-highlight {
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: none;
         }
 
         .navbar-actions {
@@ -339,9 +360,10 @@
             border-radius: 16px;
             padding: 16px 20px;
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             position: relative;
-            flex-shrink: 0;
+            flex: 1;
+            min-height: 220px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -352,6 +374,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 12px;
+            flex-shrink: 0;
         }
 
         .stage-header-title {
@@ -365,7 +388,9 @@
 
         .barrier-graphic-large {
             position: relative;
-            height: 135px;
+            flex: 1;
+            min-height: 180px;
+            height: 210px;
             background: rgba(0, 0, 0, 0.04);
             border-radius: 14px;
             display: flex;
@@ -418,19 +443,19 @@
         .signal-red { background-color: var(--accent-red); box-shadow: 0 0 15px var(--accent-red); }
 
         .barrier-post-large {
-            width: 20px;
-            height: 44px;
+            width: 22px;
+            height: 48px;
             background: #64748b;
             border-radius: 6px 6px 0 0;
             position: relative;
-            margin-left: 30px;
+            margin-left: 36px;
         }
 
         .barrier-arm-large {
             position: absolute;
-            bottom: 30px;
+            bottom: 28px;
             left: 10px;
-            width: 115px;
+            width: 105px;
             height: 8px;
             background: repeating-linear-gradient(
                 90deg,
@@ -447,7 +472,7 @@
         }
 
         .barrier-arm-open {
-            transform: rotate(-52deg);
+            transform: rotate(-45deg);
         }
 
         /* Controls Section */
@@ -575,7 +600,7 @@
             border: 1px solid var(--status-border);
             border-radius: 14px;
             padding: 12px 18px;
-            margin-top: auto;
+            margin-top: 14px;
             flex-shrink: 0;
         }
 
@@ -722,11 +747,11 @@
         <!-- Top Navigation Bar -->
         <header class="top-navbar">
             <div class="brand-badge">
-                <span class="brand-icon">🚗</span>
-                <span>Smart Parking Station</span>
+                <span class="brand-icon-box">🚗</span>
+                <span class="brand-text-highlight">Smart Parking Station</span>
             </div>
             <div class="navbar-actions">
-                <button id="themeToggleBtn" class="theme-toggle-btn" title="Switch to Light Mode" aria-label="Toggle Theme">
+                <button id="themeToggleBtn" class="theme-toggle-btn" title="Toggle Theme" aria-label="Toggle Theme">
                     ☀️
                 </button>
             </div>

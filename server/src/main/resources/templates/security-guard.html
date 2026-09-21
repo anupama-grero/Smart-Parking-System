@@ -511,16 +511,15 @@
             box-shadow: none !important;
         }
 
-        /* Activity Feed & Toasts */
+        /* Activity Feed (Now in Left Column) */
         .activity-feed-card {
             background: var(--status-bg);
             border: 1px solid var(--status-border);
             border-radius: 14px;
-            padding: 12px 18px;
-            margin-top: auto;
+            padding: 14px 16px;
+            margin-top: 6px;
             flex: 1;
-            min-height: 80px;
-            max-height: 120px;
+            min-height: 0;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -543,7 +542,6 @@
             list-style: none;
             padding: 0;
             margin: 0;
-            max-height: 75px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -557,7 +555,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 4px 0;
+            padding: 6px 0;
             border-bottom: 1px solid rgba(148, 163, 184, 0.15);
         }
 
@@ -569,6 +567,39 @@
             font-size: 11px;
             color: var(--text-muted);
             font-weight: 600;
+        }
+
+        /* Station Instructions (Now in Right Column) */
+        .instructions-card {
+            background: var(--status-bg);
+            border: 1px solid var(--status-border);
+            border-radius: 14px;
+            padding: 12px 18px;
+            margin-top: auto;
+            flex-shrink: 0;
+        }
+
+        .instructions-header {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .instructions-text {
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .theme-label {
+            display: none !important;
         }
 
         /* Toast Notifications - Fixed Height Container to Avoid Layout Shift */
@@ -722,14 +753,17 @@
                     </div>
                 </div>
 
-                <!-- Station Info Card -->
-                <div class="status-container" style="margin-top: auto; margin-bottom: 0;">
-                    <div class="status-label" style="font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-                        ℹ️ Station Instructions
+                <!-- Recent Activity Feed (Swapped to Left Column - Audit Log) -->
+                <div class="activity-feed-card">
+                    <div class="activity-header">
+                        <span>📋 Recent Gate Overrides</span>
                     </div>
-                    <p style="margin: 0; font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
-                        Click <strong>Open Barrier</strong> or <strong>Close Barrier</strong> to trigger manual override. Watch the live vehicle simulation and gate visualizer.
-                    </p>
+                    <ul id="activityList" class="activity-list">
+                        <li class="activity-item">
+                            <span>System initialized</span>
+                            <span class="activity-time">Just now</span>
+                        </li>
+                    </ul>
                 </div>
 
             </section>
@@ -738,7 +772,7 @@
             <section class="panel-card">
                 
                 <div class="panel-title-group">
-                    <h2 id="mainHeaderTitle" style="margin: 0; font-size: 24px; font-weight: 800; color: var(--text-primary);">Gate Control Panel</h2>
+                    <h2 id="mainHeaderTitle" style="margin: 0; font-size: 20px; font-weight: 800; color: var(--text-primary);">Gate Control Panel</h2>
                     <p>Security Guard Remote Override Station</p>
                 </div>
 
@@ -777,17 +811,14 @@
                 <!-- Dynamic Notification Toast -->
                 <div id="messageBox" class="message-toast"></div>
 
-                <!-- Recent Activity Feed (Adjusted to fill empty space under buttons) -->
-                <div class="activity-feed-card">
-                    <div class="activity-header">
-                        <span>📋 Recent Gate Overrides</span>
+                <!-- Station Info Card (Swapped to Right Column - Wide Banner) -->
+                <div class="instructions-card">
+                    <div class="instructions-header">
+                        <span>ℹ️ Station Instructions</span>
                     </div>
-                    <ul id="activityList" class="activity-list">
-                        <li class="activity-item">
-                            <span>System initialized</span>
-                            <span class="activity-time">Just now</span>
-                        </li>
-                    </ul>
+                    <p class="instructions-text">
+                        Click <strong>Open Barrier</strong> or <strong>Close Barrier</strong> to trigger manual override. Watch the live vehicle simulation and gate visualizer.
+                    </p>
                 </div>
 
             </section>
@@ -795,6 +826,6 @@
         </main>
     </div>
 
-    <script src="/js/security-gate.js"></script>
+    <script src="/js/security-gate.js?v=3"></script>
 </body>
 </html>

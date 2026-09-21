@@ -677,20 +677,12 @@
 
                 <!-- Hardware Status Summary -->
                 <div class="status-container">
-                    <div class="status-row">
+                    <div class="status-row" style="border-bottom: none;">
                         <span class="status-label">
                             <span id="espPulse" class="pulse-dot pulse-red"></span>
                             ESP32 Controller:
                         </span>
                         <span id="espStatus" class="status-pill status-offline">Checking...</span>
-                    </div>
-                    <div class="status-row">
-                        <span class="status-label">Entrance Barrier:</span>
-                        <span id="entryStatus" class="status-pill status-closed">CLOSED</span>
-                    </div>
-                    <div class="status-row">
-                        <span class="status-label">Exit Barrier:</span>
-                        <span id="exitStatus" class="status-pill status-closed">CLOSED</span>
                     </div>
                 </div>
 
@@ -700,7 +692,7 @@
                         ℹ️ Station Instructions
                     </div>
                     <p style="margin: 0; font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
-                        Click <strong>Open Barrier</strong> to trigger manual override. Watch the live vehicle simulation and gate visualizer.
+                        Click <strong>Open Barrier</strong> or <strong>Close Barrier</strong> to trigger manual override. Watch the live vehicle simulation and gate visualizer.
                     </p>
                 </div>
 
@@ -736,9 +728,14 @@
 
                 <!-- Single Gate Operation Actions -->
                 <div class="controls-card">
-                    <button id="openActiveBtn" class="btn-action btn-primary" style="width: 100%;" onclick="openActiveGate()">
-                        <span>🔓</span> Open Barrier
-                    </button>
+                    <div class="btn-grid">
+                        <button id="openActiveBtn" class="btn-action btn-primary" onclick="openActiveGate()">
+                            <span>🔓</span> Open Barrier
+                        </button>
+                        <button id="closeActiveBtn" class="btn-action btn-secondary" onclick="closeActiveGate()">
+                            <span>🔒</span> Close Barrier
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Dynamic Notification Toast -->

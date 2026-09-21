@@ -700,7 +700,7 @@
                         ℹ️ Station Instructions
                     </div>
                     <p style="margin: 0; font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
-                        Click <strong>Open Barrier</strong> or <strong>Close Barrier</strong> to trigger manual override. Watch the live vehicle simulation and gate visualizer.
+                        Click <strong>Open Barrier</strong> to trigger manual override. Watch the live vehicle simulation and gate visualizer.
                     </p>
                 </div>
 
@@ -736,14 +736,9 @@
 
                 <!-- Single Gate Operation Actions -->
                 <div class="controls-card">
-                    <div class="btn-grid">
-                        <button id="openActiveBtn" class="btn-action btn-primary" onclick="openActiveGate()">
-                            <span>🔓</span> Open Barrier
-                        </button>
-                        <button id="closeActiveBtn" class="btn-action btn-secondary" onclick="closeActiveGate()">
-                            <span>🔒</span> Close Barrier
-                        </button>
-                    </div>
+                    <button id="openActiveBtn" class="btn-action btn-primary" style="width: 100%;" onclick="openActiveGate()">
+                        <span>🔓</span> Open Barrier
+                    </button>
                 </div>
 
                 <!-- Dynamic Notification Toast -->

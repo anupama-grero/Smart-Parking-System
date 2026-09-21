@@ -262,7 +262,7 @@ function addActivityLog(text, isError = false) {
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
     li.innerHTML = `
-        <span style="${isError ? 'color: var(--accent-red); font-weight: 600;' : ''}">${text}</span>
+        <span class="activity-text" style="${isError ? 'color: var(--accent-red); font-weight: 600;' : ''}">${text}</span>
         <span class="activity-time">${timeStr}</span>
     `;
 

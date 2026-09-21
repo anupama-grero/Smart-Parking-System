@@ -180,7 +180,7 @@
         /* Main Grid Content Layout */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 320px 1fr;
+            grid-template-columns: 350px 1fr;
             gap: 16px;
             flex: 1;
             min-height: 0;
@@ -572,6 +572,22 @@
             flex-direction: column;
             gap: 6px;
             flex: 1;
+            padding-right: 4px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+        }
+
+        .activity-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .activity-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .activity-list::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.25);
+            border-radius: 4px;
         }
 
         .activity-item {
@@ -580,6 +596,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 12px;
             padding: 6px 0;
             border-bottom: 1px solid rgba(148, 163, 184, 0.15);
         }
@@ -588,10 +605,19 @@
             border-bottom: none;
         }
 
+        .activity-text {
+            flex: 1;
+            min-width: 0;
+            line-height: 1.35;
+        }
+
         .activity-time {
             font-size: 11px;
             color: var(--text-muted);
             font-weight: 600;
+            flex-shrink: 0;
+            white-space: nowrap;
+            letter-spacing: 0.2px;
         }
 
         /* Station Instructions (Now in Right Column) */
@@ -785,7 +811,7 @@
                     </div>
                     <ul id="activityList" class="activity-list">
                         <li class="activity-item">
-                            <span>System initialized</span>
+                            <span class="activity-text">System initialized</span>
                             <span class="activity-time">Just now</span>
                         </li>
                     </ul>
@@ -851,6 +877,6 @@
         </main>
     </div>
 
-    <script src="/js/security-gate.js?v=3"></script>
+    <script src="/js/security-gate.js?v=4"></script>
 </body>
 </html>

@@ -24,14 +24,21 @@ function toggleTheme() {
 }
 
 function setTheme(theme) {
+    const themeBtn = document.getElementById('themeToggleBtn');
     if (theme === 'dark') {
         document.body.classList.add('dark-theme');
-        const themeBtn = document.getElementById('themeToggleBtn');
-        if (themeBtn) themeBtn.innerHTML = '☀️ <span class="theme-label">Light Mode</span>';
+        if (themeBtn) {
+            themeBtn.innerHTML = '☀️';
+            themeBtn.title = 'Switch to Light Mode';
+            themeBtn.setAttribute('aria-label', 'Switch to Light Mode');
+        }
     } else {
         document.body.classList.remove('dark-theme');
-        const themeBtn = document.getElementById('themeToggleBtn');
-        if (themeBtn) themeBtn.innerHTML = '🌙 <span class="theme-label">Dark Mode</span>';
+        if (themeBtn) {
+            themeBtn.innerHTML = '🌙';
+            themeBtn.title = 'Switch to Dark Mode';
+            themeBtn.setAttribute('aria-label', 'Switch to Dark Mode');
+        }
     }
     localStorage.setItem('sps-theme', theme);
 }
@@ -279,11 +286,16 @@ function showNotification(text, type) {
     }, 4500);
 }
 
-// Vehicle Simulation State Engine
-let vehicleState = 'APPROACHING_ENTRY';
+// Vehicle Simulation & Hardware Sensor State Engine
+let vehicleState = 'WAITING_ENTRY'; // Starts ready in front of gate
 let isVehicleAnimating = false;
 
 function startVehicleSimulation() {
+    const car = document.getElementById('simVehicle');
+    if (car) {
+        car.classList.add('vehicle-facing-right');
+        car.style.left = '40px'; // Initial approach stop line in front of barrier
+    }
     setInterval(tickVehicleSimulation, 1000);
 }
 
@@ -296,62 +308,78 @@ function tickVehicleSimulation() {
     switch (vehicleState) {
         case 'APPROACHING_ENTRY':
             isVehicleAnimating = true;
-            car.classList.add('vehicle-facing-right'); // Bumper facing right towards gate
-            car.style.left = '40px'; // Stops at entrance approach line in front of gate
+            car.classList.add('vehicle-facing-right');
+            car.style.left = '40px'; // Smoothly stops at the gate
             setTimeout(() => {
                 vehicleState = 'WAITING_ENTRY';
                 isVehicleAnimating = false;
-            }, 2300);
+            }, 2100);
             break;
 
         case 'WAITING_ENTRY':
+            // Only proceeds once the barrier is actually OPEN (via sensor or manual button)
             if (currentBarrierState === 'OPEN') {
                 isVehicleAnimating = true;
                 car.classList.add('vehicle-facing-right');
-                car.style.left = '340px'; // Drives into parking campus corner
+                car.style.left = '320px'; // Smoothly drives into the campus
                 setTimeout(() => {
                     vehicleState = 'PARKED_PAUSE';
                     isVehicleAnimating = false;
-                    // ~2 seconds waiting time in parking area
                     setTimeout(() => {
                         if (vehicleState === 'PARKED_PAUSE') {
-                            car.classList.remove('vehicle-facing-right'); // Turns facing left towards exit
+                            car.classList.remove('vehicle-facing-right'); // Turns around towards exit
                             vehicleState = 'APPROACHING_EXIT';
                         }
-                    }, 2000);
-                }, 2300);
+                    }, 2500);
+                }, 2100);
             }
             break;
 
         case 'APPROACHING_EXIT':
             isVehicleAnimating = true;
-            car.classList.remove('vehicle-facing-right'); // Bumper facing left towards exit
-            car.style.left = '160px'; // Stops at exit approach line inside gate
+            car.classList.remove('vehicle-facing-right');
+            car.style.left = '160px'; // Waits at exit line
             setTimeout(() => {
                 vehicleState = 'WAITING_EXIT';
                 isVehicleAnimating = false;
-            }, 2300);
+            }, 2100);
             break;
 
         case 'WAITING_EXIT':
             if (currentBarrierState === 'OPEN') {
                 isVehicleAnimating = true;
                 car.classList.remove('vehicle-facing-right');
-                car.style.left = '-80px'; // Drives out off-screen to left
+                car.style.left = '-80px'; // Drives out smoothly
                 setTimeout(() => {
                     vehicleState = 'RESET_PAUSE';
                     isVehicleAnimating = false;
-                    // ~2 seconds waiting time outside before next loop
                     setTimeout(() => {
-                        car.classList.add('vehicle-facing-right'); // Turns facing right for next entry
+                        car.classList.add('vehicle-facing-right');
                         car.style.left = '-60px';
                         vehicleState = 'APPROACHING_ENTRY';
                     }, 2000);
-                }, 2300);
+                }, 2100);
             }
             break;
     }
 }
+
+/**
+ * Hardware Sensor / Camera Integration Hooks:
+ * When ESP32 / camera ultrasonic sensor detects a vehicle physically at the gate,
+ * call window.onHardwareVehicleDetected() to seamlessly trigger live visual response.
+ */
+window.onHardwareVehicleDetected = function() {
+    const car = document.getElementById('simVehicle');
+    if (!car) return;
+    vehicleState = 'APPROACHING_ENTRY';
+    tickVehicleSimulation();
+};
+
+window.onHardwareVehicleCleared = function() {
+    vehicleState = 'RESET_PAUSE';
+    tickVehicleSimulation();
+};
 
 // Button Ripple Effect
 function createRipple(event) {

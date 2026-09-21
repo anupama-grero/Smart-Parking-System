@@ -73,7 +73,9 @@
             background: var(--bg-gradient);
             margin: 0;
             padding: 0;
-            min-height: 100vh;
+            height: 100vh;
+            max-height: 100vh;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
         }
@@ -82,11 +84,15 @@
             width: 100%;
             max-width: 1400px;
             margin: 0 auto;
-            padding: 24px;
+            padding: 16px 24px;
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 14px;
+            height: 100vh;
+            max-height: 100vh;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         /* Top Header Bar */
@@ -98,23 +104,24 @@
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--card-border);
-            padding: 16px 28px;
-            border-radius: 20px;
+            padding: 10px 24px;
+            border-radius: 16px;
             box-shadow: var(--card-shadow);
+            flex-shrink: 0;
         }
 
         .brand-badge {
             display: inline-flex;
             align-items: center;
             gap: 12px;
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 800;
             color: var(--text-primary);
             letter-spacing: -0.3px;
         }
 
         .brand-icon {
-            font-size: 24px;
+            font-size: 22px;
             background: linear-gradient(135deg, var(--primary-blue), #60a5fa);
             -webkit-background-clip: text;
             background-clip: text;
@@ -131,29 +138,33 @@
             background: var(--status-bg);
             border: 1px solid var(--card-border);
             color: var(--text-primary);
-            padding: 10px 20px;
-            border-radius: 999px;
-            font-size: 14px;
-            font-weight: 700;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 18px;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            padding: 0;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .theme-toggle-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
         }
 
         /* Main Grid Content Layout */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 360px 1fr;
-            gap: 24px;
+            grid-template-columns: 320px 1fr;
+            gap: 16px;
             flex: 1;
-            align-items: start;
+            min-height: 0;
+            align-items: stretch;
+            overflow: hidden;
         }
 
         /* Panel Cards */
@@ -162,28 +173,32 @@
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--card-border);
-            border-radius: 24px;
-            padding: 28px;
+            border-radius: 20px;
+            padding: 18px 22px;
             box-shadow: var(--card-shadow);
             display: flex;
             flex-direction: column;
+            min-height: 0;
+            height: 100%;
+            overflow: hidden;
         }
 
         .panel-title-group {
-            margin-bottom: 20px;
+            margin-bottom: 12px;
+            flex-shrink: 0;
         }
 
         .panel-title-group h3 {
             margin: 0;
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 800;
             color: var(--text-primary);
             letter-spacing: -0.3px;
         }
 
         .panel-title-group p {
-            margin: 4px 0 0 0;
-            font-size: 13px;
+            margin: 2px 0 0 0;
+            font-size: 12.5px;
             color: var(--text-muted);
             font-weight: 500;
         }
@@ -192,16 +207,17 @@
         .status-container {
             background: var(--status-bg);
             border: 1px solid var(--status-border);
-            border-radius: 16px;
-            padding: 16px 20px;
-            margin-bottom: 24px;
+            border-radius: 14px;
+            padding: 12px 16px;
+            margin-bottom: 14px;
+            flex-shrink: 0;
         }
 
         .status-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
+            padding: 10px 0;
             border-bottom: 1px solid var(--status-border);
         }
 
@@ -210,7 +226,7 @@
         }
 
         .status-label {
-            font-size: 14px;
+            font-size: 13.5px;
             font-weight: 600;
             color: var(--text-secondary);
             display: flex;
@@ -320,12 +336,12 @@
         .visualizer-stage {
             background: var(--visualizer-bg);
             border: 1px solid var(--status-border);
-            border-radius: 20px;
-            padding: 28px;
+            border-radius: 16px;
+            padding: 16px 20px;
             text-align: center;
-            margin-bottom: 24px;
+            margin-bottom: 10px;
             position: relative;
-            min-height: 290px;
+            flex-shrink: 0;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -335,11 +351,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .stage-header-title {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 800;
             color: var(--text-primary);
             display: flex;
@@ -349,13 +365,13 @@
 
         .barrier-graphic-large {
             position: relative;
-            height: 200px;
+            height: 135px;
             background: rgba(0, 0, 0, 0.04);
-            border-radius: 16px;
+            border-radius: 14px;
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
-            padding: 24px 44px;
+            padding: 16px 36px;
             overflow: hidden;
             border: 1px solid var(--status-border);
         }
@@ -370,7 +386,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 32px;
+            height: 26px;
             background: rgba(100, 116, 139, 0.12);
             border-top: 2px dashed rgba(148, 163, 184, 0.3);
             z-index: 1;
@@ -378,11 +394,11 @@
 
         .vehicle-car {
             position: absolute;
-            bottom: 6px;
+            bottom: 4px;
             left: -60px;
-            font-size: 32px;
+            font-size: 28px;
             z-index: 5;
-            transition: left 2.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s ease;
+            transition: left 2.0s cubic-bezier(0.25, 1, 0.5, 1), transform 0.4s ease;
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
         }
 
@@ -391,10 +407,10 @@
         }
 
         .signal-light-large {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
-            margin-bottom: 14px;
+            margin-bottom: 10px;
             transition: all 0.3s ease;
         }
 
@@ -402,20 +418,20 @@
         .signal-red { background-color: var(--accent-red); box-shadow: 0 0 15px var(--accent-red); }
 
         .barrier-post-large {
-            width: 22px;
-            height: 50px;
+            width: 20px;
+            height: 44px;
             background: #64748b;
             border-radius: 6px 6px 0 0;
             position: relative;
-            margin-left: 35px;
+            margin-left: 30px;
         }
 
         .barrier-arm-large {
             position: absolute;
-            bottom: 34px;
-            left: 12px;
-            width: 135px;
-            height: 10px;
+            bottom: 30px;
+            left: 10px;
+            width: 115px;
+            height: 8px;
             background: repeating-linear-gradient(
                 90deg,
                 var(--arm-color),
@@ -436,23 +452,24 @@
 
         /* Controls Section */
         .controls-card {
-            margin-bottom: 24px;
+            margin-bottom: 10px;
+            flex-shrink: 0;
         }
 
         .btn-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
+            gap: 14px;
         }
 
         .btn-action {
             position: relative;
             overflow: hidden;
             border: none;
-            border-radius: 16px;
-            padding: 18px 24px;
+            border-radius: 14px;
+            padding: 14px 20px;
             font-family: inherit;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 800;
             cursor: pointer;
             display: flex;
@@ -498,46 +515,49 @@
         .activity-feed-card {
             background: var(--status-bg);
             border: 1px solid var(--status-border);
-            border-radius: 16px;
-            padding: 20px 24px;
-            margin-top: 16px;
+            border-radius: 14px;
+            padding: 12px 18px;
+            margin-top: auto;
             flex: 1;
+            min-height: 80px;
+            max-height: 120px;
             display: flex;
             flex-direction: column;
-            min-height: 180px;
+            overflow: hidden;
         }
 
         .activity-header {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 800;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.8px;
-            margin-bottom: 14px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
             gap: 6px;
+            flex-shrink: 0;
         }
 
         .activity-list {
             list-style: none;
             padding: 0;
             margin: 0;
-            max-height: 260px;
+            max-height: 75px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 6px;
             flex: 1;
         }
 
         .activity-item {
-            font-size: 13.5px;
+            font-size: 12.5px;
             color: var(--text-secondary);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 8px 0;
+            padding: 4px 0;
             border-bottom: 1px solid rgba(148, 163, 184, 0.15);
         }
 
@@ -546,26 +566,27 @@
         }
 
         .activity-time {
-            font-size: 11.5px;
+            font-size: 11px;
             color: var(--text-muted);
             font-weight: 600;
         }
 
         /* Toast Notifications - Fixed Height Container to Avoid Layout Shift */
         .message-toast {
-            margin-top: 12px;
-            margin-bottom: 4px;
-            padding: 12px 18px;
-            border-radius: 14px;
-            font-size: 13px;
+            margin-top: 6px;
+            margin-bottom: 6px;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 12.5px;
             font-weight: 600;
             text-align: center;
             opacity: 0;
-            min-height: 46px;
+            min-height: 38px;
             display: flex;
             align-items: center;
             justify-content: center;
             visibility: hidden;
+            flex-shrink: 0;
             transition: opacity 0.3s ease, visibility 0.3s ease;
         }
 
@@ -618,12 +639,27 @@
 
         /* Responsive Breakpoints */
         @media (max-width: 991.98px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
+            body {
+                height: auto;
+                max-height: unset;
+                overflow: auto;
             }
 
             .dashboard-wrapper {
+                height: auto;
+                max-height: unset;
                 padding: 16px;
+                overflow: visible;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                overflow: visible;
+            }
+
+            .panel-card {
+                height: auto;
+                overflow: visible;
             }
         }
 
@@ -636,7 +672,7 @@
 
             .navbar-actions {
                 width: 100%;
-                justify-content: space-between;
+                justify-content: flex-end;
             }
 
             .btn-grid {
@@ -644,7 +680,7 @@
             }
 
             .barrier-arm-large {
-                width: 120px;
+                width: 105px;
             }
         }
     </style>
@@ -659,8 +695,8 @@
                 <span>Smart Parking Station</span>
             </div>
             <div class="navbar-actions">
-                <button id="themeToggleBtn" class="theme-toggle-btn">
-                    ☀️ <span class="theme-label">Light Mode</span>
+                <button id="themeToggleBtn" class="theme-toggle-btn" title="Switch to Light Mode" aria-label="Toggle Theme">
+                    ☀️
                 </button>
             </div>
         </header>

@@ -254,7 +254,7 @@ Controls automated entrance and exit barrier gates. Features real-time gate stat
 ### Driver Parking Session APIs (`ParkingSessionController`)
 | Method | Endpoint | Request / Parameters | Status Code |
 |---|---|---|---|
-| `POST` | `/api/parking-sessions/entry` | `{"licensePlate":"ABC-1234","driverName":"John","phone":"0771234567","slotNumber":1}` | `201 Created` / `400 Bad Request` |
+| `POST` | `/api/parking-sessions/entry` | `{"driverId":"D101","name":"John Doe","vehicleNumber":"ABC-1234","slotNumber":1}` | `201 Created` / `400 Bad Request` / `404 Not Found` / `409 Conflict` |
 | `PUT` | `/api/parking-sessions/exit/{id}` | Path variable `sessionId` | `200 OK` / `404 Not Found` |
 | `GET` | `/api/parking-sessions/{id}` | Path variable `id` | `200 OK` / `404 Not Found` |
 | `GET` | `/api/parking-sessions/active` | Retrieves all active parking sessions | `200 OK` |
@@ -267,17 +267,29 @@ Controls automated entrance and exit barrier gates. Features real-time gate stat
 The application uses **Spring Data JPA** with an **H2 In-Memory Database** (or configurable MySQL database):
 
 ```text
-+-------------------+        +----------------------+        +--------------------+
-|      Driver       |        |    ParkingSession    |        |    ParkingSlot     |
-+-------------------+        +----------------------+        +--------------------+
-| id (PK)           | 1    * | id (PK)              | *    1 | id (PK)            |
-| driverId (Unique) |--------| driver_id (FK)       |--------| slotNumber(Unique) |
-| name              |        | parking_slot_id (FK) |        | category           |
-| licensePlate      |        | startTime            |        | isOccupied         |
-+-------------------+        | endTime              |        | lastDistanceCm     |
-                             | status (ACTIVE/DONE) |        | lastSensorUpdate   |
-                             +----------------------+        +--------------------+
++-------------------+        +----------------------+
+|      Driver       |        |    ParkingSession    |
++-------------------+        +----------------------+
+| id (PK)           | 1    * | id (PK)              |
+| driverId (Unique) |--------| driver_pk_id (FK)    |
+| name              |        | parking_slot_id (FK) | *    1 -> ParkingSlot
+| vehicleNumber     |        | entryTime            |
+|                   |        | exitTime             |
+|                   |        | status (ACTIVE/      |
+|                   |        |        COMPLETED)    |
++-------------------+        +----------------------+
+
+Gate (separate persisted state):
++--------------------+
+| id (PK)            |
+| gateName (Unique)  |
+| gateType (Unique)  |
+| status             |
+| updatedAt          |
++--------------------+
 ```
+
+`parking_slot_id` references the existing `ParkingSlot` entity. Gate records persist entrance/exit barrier status; ESP32 communication remains in `BarrierService`.
 
 * **Startup Seeding:** [DatabaseInitializer.java](file:///d:/Year%203%20-%20Semester%201/Enterprise%20Application%20Development/Smart-Parking-System/server/src/main/java/com/smartparking/backend/config/DatabaseInitializer.java) automatically seeds Slots 1–8 at startup if the database is empty.
 
@@ -364,10 +376,11 @@ mvn test
 - `BackendApplicationTests`: Spring application context loading
 - `BarrierControllerTest`: Barrier REST controller mappings and 502/400 exception mappings
 - `BarrierServiceTest`: Barrier state transitions, repeated requests, gate independence, and mock mode
+- `GateIntegrationTest`: Persisted gate state, entrance/exit operations, and gate status API
 - `ParkingSessionIntegrationTest`: Driver entry/exit workflows, slot reservation, and session history
 - `SensorOccupancyIntegrationTest`, `SensorOccupancyControllerTest`, `SensorOccupancyServiceTest`: Telemetry ingestion, threshold calculation, 1:1 sensor-slot mapping, and active session overrides
 
-**Verification Results:** `Tests run: 50, Failures: 0, Errors: 0, Skipped: 0` (100% Pass Rate).
+**Verification Results:** `Tests run: 56, Failures: 0, Errors: 0, Skipped: 0` (100% pass rate; last run: `mvn clean test`).
 
 ---
 
@@ -390,6 +403,10 @@ Development follows a structured branch workflow:
 - [x] **Issue #6 — Real-Time Occupancy & Sensor Integration:** HC-SR04 telemetry processing.
 - [x] **Issue #7 — Security Guard Gate & Barrier API:** Remote gate override REST endpoints.
 - [x] **Issue #8 — Driver & Parking Session Management:** Driver arrival, session tracking, departure.
+- [ ] **Issue #9 — Database Setup & Parking Slot Management:** PENDING.
+- [x] **Issue #10 — Driver & Parking Session Database:** Driver and session persistence with database relationships.
+- [x] **Issue #11 — Sensor & Real-Time Occupancy Database:** Completed with slot-based sensor telemetry persistence, occupancy calculation, and real-time slot updates.
+- [x] **Issue #12 — Gate, Barrier & Database Integration:** Gate state persistence with the existing ESP32 control path.
 
 ---
 

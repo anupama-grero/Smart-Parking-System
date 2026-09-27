@@ -117,4 +117,56 @@ class BarrierServiceTest {
         assertEquals(GateStatus.CLOSED, barrierService.getEntranceGateState());
         assertEquals(GateStatus.OPEN, barrierService.getExitGateState());
     }
+
+    @Test
+    void testBarrierServicePersistsGateStateToRepository() {
+        com.smartparking.backend.repository.GateRepository mockRepo = 
+                org.mockito.Mockito.mock(com.smartparking.backend.repository.GateRepository.class);
+        com.smartparking.backend.model.Gate mockGate = 
+                new com.smartparking.backend.model.Gate("Main Entrance Gate", GateType.ENTRANCE, GateStatus.CLOSED);
+
+        org.mockito.Mockito.when(mockRepo.findByGateType(GateType.ENTRANCE))
+                .thenReturn(java.util.Optional.of(mockGate));
+
+        BarrierService serviceWithRepo = new BarrierService(
+                mockRepo,
+                "http://localhost:9999",
+                1000,
+                1000,
+                true
+        );
+
+        GateStatusResponse response = serviceWithRepo.openEntranceBarrier();
+        assertEquals("OPEN", response.getEntryGate());
+        org.mockito.Mockito.verify(mockRepo, org.mockito.Mockito.atLeastOnce())
+                .save(org.mockito.ArgumentMatchers.any(com.smartparking.backend.model.Gate.class));
+        assertEquals(GateStatus.OPEN, mockGate.getStatus());
+    }
+
+    @Test
+    void testBarrierServiceFetchesPersistedGateState() {
+        com.smartparking.backend.repository.GateRepository mockRepo = 
+                org.mockito.Mockito.mock(com.smartparking.backend.repository.GateRepository.class);
+        com.smartparking.backend.model.Gate openEntranceGate = 
+                new com.smartparking.backend.model.Gate("Main Entrance Gate", GateType.ENTRANCE, GateStatus.OPEN);
+        com.smartparking.backend.model.Gate closedExitGate = 
+                new com.smartparking.backend.model.Gate("Main Exit Gate", GateType.EXIT, GateStatus.CLOSED);
+
+        org.mockito.Mockito.when(mockRepo.findByGateType(GateType.ENTRANCE))
+                .thenReturn(java.util.Optional.of(openEntranceGate));
+        org.mockito.Mockito.when(mockRepo.findByGateType(GateType.EXIT))
+                .thenReturn(java.util.Optional.of(closedExitGate));
+
+        BarrierService serviceWithRepo = new BarrierService(
+                mockRepo,
+                "http://localhost:9999",
+                1000,
+                1000,
+                true
+        );
+
+        GateStatusResponse response = serviceWithRepo.getGateStatus();
+        assertEquals("OPEN", response.getEntryGate());
+        assertEquals("CLOSED", response.getExitGate());
+    }
 }

@@ -4,21 +4,28 @@ import com.smartparking.backend.dto.GateStatusResponse;
 import com.smartparking.backend.exception.Esp32CommunicationException;
 import com.smartparking.backend.exception.Esp32UnavailableException;
 import com.smartparking.backend.exception.InvalidGateException;
+import com.smartparking.backend.model.Gate;
 import com.smartparking.backend.model.GateAction;
 import com.smartparking.backend.model.GateStatus;
 import com.smartparking.backend.model.GateType;
+import com.smartparking.backend.repository.GateRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class BarrierService {
 
+    private final GateRepository gateRepository;
     private final RestTemplate restTemplate;
     private final String esp32BaseUrl;
     private final boolean mockModeEnabled;
@@ -26,12 +33,15 @@ public class BarrierService {
     private GateStatus entranceGateState = GateStatus.CLOSED;
     private GateStatus exitGateState = GateStatus.CLOSED;
 
+    @Autowired
     public BarrierService(
+            GateRepository gateRepository,
             @Value("${esp32.base-url:http://192.168.1.100}") String esp32BaseUrl,
             @Value("${esp32.connect-timeout-ms:3000}") int connectTimeoutMs,
             @Value("${esp32.read-timeout-ms:3000}") int readTimeoutMs,
             @Value("${esp32.mock-mode-enabled:true}") boolean mockModeEnabled
     ) {
+        this.gateRepository = gateRepository;
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(connectTimeoutMs);
         factory.setReadTimeout(readTimeoutMs);
@@ -40,12 +50,40 @@ public class BarrierService {
         this.mockModeEnabled = mockModeEnabled;
     }
 
+    // Convenience constructor for tests without repository
+    public BarrierService(
+            String esp32BaseUrl,
+            int connectTimeoutMs,
+            int readTimeoutMs,
+            boolean mockModeEnabled
+    ) {
+        this(null, esp32BaseUrl, connectTimeoutMs, readTimeoutMs, mockModeEnabled);
+    }
+
     public GateStatusResponse getGateStatus() {
         String esp32Health = checkEsp32Health();
+        
+        String entryStatus = entranceGateState.name();
+        String exitStatus = exitGateState.name();
+
+        if (gateRepository != null) {
+            Optional<Gate> entranceGate = gateRepository.findByGateType(GateType.ENTRANCE);
+            if (entranceGate.isPresent()) {
+                entryStatus = entranceGate.get().getStatus().name();
+                entranceGateState = entranceGate.get().getStatus();
+            }
+
+            Optional<Gate> exitGate = gateRepository.findByGateType(GateType.EXIT);
+            if (exitGate.isPresent()) {
+                exitStatus = exitGate.get().getStatus().name();
+                exitGateState = exitGate.get().getStatus();
+            }
+        }
+
         return new GateStatusResponse(
                 esp32Health,
-                entranceGateState.name(),
-                exitGateState.name(),
+                entryStatus,
+                exitStatus,
                 "Gate status fetched successfully"
         );
     }
@@ -67,6 +105,7 @@ public class BarrierService {
         }
     }
 
+    @Transactional
     public GateStatusResponse controlBarrier(GateType gateType, GateAction action) {
         if (gateType == null) {
             throw new InvalidGateException("Gate type must be specified (ENTRANCE or EXIT).");
@@ -75,18 +114,32 @@ public class BarrierService {
             throw new InvalidGateException("Gate action must be specified (OPEN or CLOSE).");
         }
 
-        String targetGateName = (gateType == GateType.ENTRANCE || gateType == GateType.ENTRY) ? "entrance" : "exit";
+        GateType canonicalType = (gateType == GateType.ENTRY) ? GateType.ENTRANCE : gateType;
+        String targetGateName = (canonicalType == GateType.ENTRANCE) ? "entrance" : "exit";
         String targetActionName = action.name().toLowerCase();
 
-        // ESP32 communication logic
+        // 1. ESP32 communication logic (Hardware Control)
         sendControlCommandToEsp32(targetGateName, targetActionName);
 
-        // Update internal barrier state
+        // 2. Update internal in-memory barrier state
         GateStatus targetStatus = (action == GateAction.OPEN) ? GateStatus.OPEN : GateStatus.CLOSED;
-        if (gateType == GateType.ENTRANCE || gateType == GateType.ENTRY) {
+        if (canonicalType == GateType.ENTRANCE) {
             entranceGateState = targetStatus;
-        } else if (gateType == GateType.EXIT) {
+        } else if (canonicalType == GateType.EXIT) {
             exitGateState = targetStatus;
+        }
+
+        // 3. Persist gate status into database if repository is available
+        if (gateRepository != null) {
+            Gate gate = gateRepository.findByGateType(canonicalType)
+                    .orElseGet(() -> new Gate(
+                            (canonicalType == GateType.ENTRANCE) ? "Main Entrance Gate" : "Main Exit Gate",
+                            canonicalType,
+                            targetStatus
+                    ));
+            gate.setStatus(targetStatus);
+            gate.setUpdatedAt(LocalDateTime.now());
+            gateRepository.save(gate);
         }
 
         String actionPastTense = (action == GateAction.OPEN) ? "opened" : "closed";
@@ -155,5 +208,9 @@ public class BarrierService {
 
     public void setExitGateState(GateStatus exitGateState) {
         this.exitGateState = exitGateState;
+    }
+
+    public GateRepository getGateRepository() {
+        return gateRepository;
     }
 }

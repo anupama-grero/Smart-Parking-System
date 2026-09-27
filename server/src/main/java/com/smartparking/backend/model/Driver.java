@@ -1,10 +1,17 @@
 package com.smartparking.backend.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -21,8 +28,12 @@ public class Driver {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String vehicleNumber;
+
+    @OneToMany(mappedBy = "driver", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties("driver")
+    private List<ParkingSession> sessions = new ArrayList<>();
 
     public Driver() {}
 
@@ -39,6 +50,7 @@ public class Driver {
         this.vehicleNumber = vehicleNumber;
     }
 
+    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -50,4 +62,7 @@ public class Driver {
 
     public String getVehicleNumber() { return vehicleNumber; }
     public void setVehicleNumber(String vehicleNumber) { this.vehicleNumber = vehicleNumber; }
+
+    public List<ParkingSession> getSessions() { return sessions; }
+    public void setSessions(List<ParkingSession> sessions) { this.sessions = sessions; }
 }

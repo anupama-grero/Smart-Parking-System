@@ -10,4 +10,5 @@ import com.smartparking.backend.model.Driver;
 @Repository
 public interface DriverRepository extends JpaRepository<Driver, Long> {
     Optional<Driver> findByDriverId(String driverId);
+    Optional<Driver> findByVehicleNumber(String vehicleNumber);
 }

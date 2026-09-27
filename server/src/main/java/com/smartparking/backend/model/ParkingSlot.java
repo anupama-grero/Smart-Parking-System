@@ -8,6 +8,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "parking_slots")
@@ -17,10 +21,14 @@ public class ParkingSlot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull
+    @Positive
     @Column(nullable = false, unique = true)
     private Integer slotNumber;
 
-    @Column(nullable = false)
+    @NotBlank
+    @Size(max = 80)
+    @Column(nullable = false, length = 80)
     private String category;
 
     @Column(nullable = false)

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
 import com.smartparking.backend.model.ParkingSlot;
 import com.smartparking.backend.service.ParkingSlotService;
 
@@ -68,7 +69,7 @@ public class ParkingSlotController {
     
     @PostMapping("/slots")
     public ResponseEntity<ParkingSlot> createSlot(
-            @RequestBody ParkingSlot slot) {
+            @Valid @RequestBody ParkingSlot slot) {
 
         ParkingSlot createdSlot =
                 parkingSlotService.createSlot(slot);
@@ -84,7 +85,7 @@ public class ParkingSlotController {
     @PutMapping("/slots/{id}")
     public ParkingSlot updateSlot(
             @PathVariable Long id,
-            @RequestBody ParkingSlot slot) {
+            @Valid @RequestBody ParkingSlot slot) {
 
         return parkingSlotService.updateSlot(id, slot);
     }

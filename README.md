@@ -36,7 +36,7 @@ The system implements 8 core integrated modules (Issues #1–#8):
 ### Backend & Core
 * **Language:** Java 17
 * **Framework:** Spring Boot 3.x (Spring MVC, Spring Data JPA)
-* **Database:** H2 In-Memory Database / MySQL
+* **Database:** H2 In-Memory Database
 * **Build System:** Apache Maven
 
 ### Frontend
@@ -51,6 +51,23 @@ The system implements 8 core integrated modules (Issues #1–#8):
 * **Communication:** HTTP REST API (JSON payloads over WiFi)
 
 ---
+
+## Database Configuration
+
+The backend uses an H2 in-memory database by default. Spring Boot connects to
+`jdbc:h2:mem:smartparkingdb`; Hibernate creates or updates the schema at startup
+with `spring.jpa.hibernate.ddl-auto=update`. The `ParkingSlot` entity maps to the
+`parking_slots` table, and `DatabaseInitializer` inserts the eight sample slots
+when that table is empty. Because the database is in memory, its data is cleared
+when the application stops.
+
+The H2 console is enabled at `http://localhost:8080/h2-console`. Connect with
+JDBC URL `jdbc:h2:mem:smartparkingdb`, username `sa`, and an empty password.
+
+The `parking_slots` table enforces a required, unique slot number and a required
+category limited to 80 characters. API validation requires a positive slot
+number and a nonblank category. Occupancy is represented by `isOccupied`:
+`false` means available and `true` means occupied.
 
 ## 4. System Architecture
 

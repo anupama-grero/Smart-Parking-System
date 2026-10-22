@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f4f7fb">
+    <title>Admin Dashboard | Smart Parking System</title>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body class="admin-page">
+<div class="admin-dashboard">
+    <aside class="admin-sidebar" aria-label="Main navigation">
+        <a class="admin-brand" th:href="@{/admin}" aria-label="Smart Parking admin home">
+            <span class="admin-brand-mark" aria-hidden="true">P</span>
+            <span class="admin-brand-copy">
+                <strong>Smart Parking</strong>
+                <span>SYSTEM ADMIN</span>
+            </span>
+        </a>
+
+        <div class="admin-nav-label">WORKSPACE</div>
+        <nav class="admin-nav">
+            <a class="admin-nav-link is-active" href="#overview" aria-current="page">
+                <span class="admin-nav-icon" aria-hidden="true">▦</span> Overview
+            </a>
+            <a class="admin-nav-link" href="#parking">
+                <span class="admin-nav-icon" aria-hidden="true">▤</span> Parking slots
+            </a>
+            <a class="admin-nav-link" href="#sessions">
+                <span class="admin-nav-icon" aria-hidden="true">↔</span> Parking sessions
+            </a>
+            <a class="admin-nav-link" href="#gates">
+                <span class="admin-nav-icon" aria-hidden="true">⌁</span> Gate status
+            </a>
+            <a class="admin-nav-link" href="#activity">
+                <span class="admin-nav-icon" aria-hidden="true">◷</span> Recent activity
+            </a>
+        </nav>
+
+        <div class="admin-sidebar-spacer"></div>
+        <div class="admin-sidebar-note">
+            <span class="admin-live-indicator" aria-hidden="true"></span>
+            <span><strong>System monitoring</strong><small>Live parking data</small></span>
+        </div>
+        <div class="admin-sidebar-footer">SMART CAMPUS PARKING</div>
+    </aside>
+
+    <main class="admin-main" id="overview">
+        <header class="admin-topbar">
+            <div class="admin-breadcrumb"><span>Workspace</span><span aria-hidden="true">/</span><strong>Overview</strong></div>
+            <div class="admin-topbar-actions">
+                <span class="admin-today" id="today-label"></span>
+                <span class="admin-avatar" aria-label="Administrator">A</span>
+            </div>
+        </header>
+
+        <div class="admin-content">
+            <section class="admin-page-heading">
+                <div>
+                    <p class="admin-eyebrow">CAMPUS OPERATIONS</p>
+                    <h1>Admin dashboard</h1>
+                    <p class="admin-heading-copy">Monitor parking availability, active sessions and gate operations.</p>
+                </div>
+                <div class="admin-heading-actions">
+                    <span class="admin-refresh-label"><span class="admin-live-indicator" aria-hidden="true"></span> Live overview</span>
+                    <button class="admin-refresh-button" id="refresh-dashboard" type="button">
+                        <span aria-hidden="true">↻</span> Refresh
+                    </button>
+                </div>
+            </section>
+
+            <div class="admin-alert" id="dashboard-error" role="alert" hidden></div>
+
+            <section class="admin-metrics" aria-label="Parking summary">
+                <article class="admin-metric-card">
+                    <div class="admin-metric-top"><span>Total parking slots</span><span class="admin-metric-icon metric-icon-blue" aria-hidden="true">▤</span></div>
+                    <div class="admin-metric-value" id="total-slots">—</div>
+                    <div class="admin-metric-foot">Configured campus spaces</div>
+                </article>
+                <article class="admin-metric-card">
+                    <div class="admin-metric-top"><span>Available now</span><span class="admin-metric-icon metric-icon-green" aria-hidden="true">✓</span></div>
+                    <div class="admin-metric-value" id="available-slots">—</div>
+                    <div class="admin-metric-foot"><span class="admin-foot-dot dot-green"></span>Ready for parking</div>
+                </article>
+                <article class="admin-metric-card">
+                    <div class="admin-metric-top"><span>Occupied</span><span class="admin-metric-icon metric-icon-amber" aria-hidden="true">◉</span></div>
+                    <div class="admin-metric-value" id="occupied-slots">—</div>
+                    <div class="admin-metric-foot" id="occupancy-foot">Live sensor status</div>
+                </article>
+                <article class="admin-metric-card">
+                    <div class="admin-metric-top"><span>Active sessions</span><span class="admin-metric-icon metric-icon-violet" aria-hidden="true">↔</span></div>
+                    <div class="admin-metric-value" id="active-sessions-count">—</div>
+                    <div class="admin-metric-foot">Vehicles currently parked</div>
+                </article>
+            </section>
+
+            <section class="admin-overview-grid">
+                <article class="admin-panel" id="parking">
+                    <div class="admin-panel-heading">
+                        <div>
+                            <h2>Parking availability</h2>
+                            <p>Current occupancy across campus</p>
+                        </div>
+                        <span class="admin-updated" id="last-updated">Waiting for data</span>
+                    </div>
+                    <div class="parking-overview">
+                        <div class="occupancy-summary">
+                            <div class="occupancy-ring" id="occupancy-ring" role="img" aria-label="Parking occupancy">
+                                <div class="occupancy-ring-center">
+                                    <strong id="occupancy-percent">—</strong>
+                                    <span>occupied</span>
+                                </div>
+                            </div>
+                            <div class="occupancy-legend">
+                                <span><i class="legend-swatch swatch-occupied"></i>Occupied <strong id="legend-occupied">—</strong></span>
+                                <span><i class="legend-swatch swatch-available"></i>Available <strong id="legend-available">—</strong></span>
+                            </div>
+                        </div>
+                        <div class="slot-overview">
+                            <div class="slot-overview-heading"><strong>Slot status</strong><span id="slot-count-label"></span></div>
+                            <div class="admin-slot-list" id="slot-list" aria-live="polite">
+                                <p class="admin-loading">Loading parking slots…</p>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="admin-panel admin-gates-panel" id="gates">
+                    <div class="admin-panel-heading">
+                        <div>
+                            <h2>Gate operations</h2>
+                            <p>Barrier and device connection</p>
+                        </div>
+                        <a class="admin-text-link" th:href="@{/security-guard}">Open controls <span aria-hidden="true">↗</span></a>
+                    </div>
+                    <div class="device-status-row">
+                        <span class="device-status-icon" aria-hidden="true">⌁</span>
+                        <span class="device-status-copy"><strong>ESP32 controller</strong><small>Barrier controller connection</small></span>
+                        <span class="admin-status-pill status-neutral" id="device-status">Checking</span>
+                    </div>
+                    <div class="gate-status-list">
+                        <div class="gate-status-row">
+                            <span class="gate-status-symbol" aria-hidden="true">↗</span>
+                            <span><strong>Main entrance gate</strong><small>Entry barrier</small></span>
+                            <span class="admin-status-pill status-neutral" id="entry-gate-status">Checking</span>
+                        </div>
+                        <div class="gate-status-row">
+                            <span class="gate-status-symbol" aria-hidden="true">↙</span>
+                            <span><strong>Main exit gate</strong><small>Exit barrier</small></span>
+                            <span class="admin-status-pill status-neutral" id="exit-gate-status">Checking</span>
+                        </div>
+                    </div>
+                    <div class="gate-panel-footer"><span class="admin-live-indicator" aria-hidden="true"></span> Gate status updates automatically</div>
+                </article>
+            </section>
+
+            <section class="admin-tables-grid">
+                <article class="admin-panel" id="sessions">
+                    <div class="admin-panel-heading">
+                        <div>
+                            <h2>Active parking sessions</h2>
+                            <p>Drivers currently using a parking slot</p>
+                        </div>
+                        <span class="admin-count-badge" id="active-session-badge">0 active</span>
+                    </div>
+                    <div class="admin-table-wrap">
+                        <table class="admin-table">
+                            <thead><tr><th>Driver</th><th>Vehicle</th><th>Slot</th><th>Entry time</th></tr></thead>
+                            <tbody id="active-sessions-table">
+                                <tr><td colspan="4" class="admin-empty">Loading active sessions…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="admin-panel" id="activity">
+                    <div class="admin-panel-heading">
+                        <div>
+                            <h2>Recent parking activity</h2>
+                            <p>Latest entries and completed sessions</p>
+                        </div>
+                        <a class="admin-text-link" th:href="@{/driver}">Driver view <span aria-hidden="true">↗</span></a>
+                    </div>
+                    <div class="admin-table-wrap">
+                        <table class="admin-table">
+                            <thead><tr><th>Driver</th><th>Slot</th><th>Entry</th><th>Status</th></tr></thead>
+                            <tbody id="recent-activity-table">
+                                <tr><td colspan="4" class="admin-empty">Loading parking activity…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+
+            <footer class="admin-footer">
+                <span>Smart Parking System <span aria-hidden="true">·</span> Campus operations</span>
+                <span id="footer-updated">Connecting to system…</span>
+            </footer>
+        </div>
+    </main>
+</div>
+<script th:src="@{/js/admin-dashboard.js}" defer></script>
+</body>
+</html>

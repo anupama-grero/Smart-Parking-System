@@ -3,10 +3,10 @@ package com.smartparking.backend.service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-/**
+    /**
  * Maps HC-SR04 parking sensors to campus slots.
- * Firmware is not in this repository; README GPIO allocation uses Echo 1–8 → Slots 1–8.
- * Entry/exit sensors (GPIO 35/34) are not occupancy sensors and are rejected here.
+ * The active firmware maps parking sensors 1–4 directly to slots 1–4.
+ * Entry/exit sensors (Gate GPIOs) are not occupancy sensors and are rejected here.
  */
 @Component
 public class SensorSlotMapper {
@@ -16,7 +16,7 @@ public class SensorSlotMapper {
 
     public SensorSlotMapper(
             @Value("${parking.sensor.min-slot-number:1}") int minSlotNumber,
-            @Value("${parking.sensor.max-slot-number:8}") int maxSlotNumber) {
+            @Value("${parking.sensor.max-slot-number:4}") int maxSlotNumber) {
         this.minSlotNumber = minSlotNumber;
         this.maxSlotNumber = maxSlotNumber;
     }

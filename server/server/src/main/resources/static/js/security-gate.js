@@ -5,11 +5,16 @@
  */
 
 // Global State
-let currentGate = 'entry'; // 'entry' or 'exit'
+let currentGate = 'entry';
 let gateStates = {
-    entry: 'CLOSED',
-    exit: 'CLOSED'
+    entry: 'UNKNOWN',
+    exit: 'UNSUPPORTED'
 };
+let parkingIsFull = false;
+let gateControlEnabled = false;
+let gateCommandState = 'IDLE';
+let entryOpenAllowed = false;
+let gateStateConfirmed = false;
 
 // Theme Management
 function initTheme() {
@@ -48,45 +53,37 @@ function switchGate(gateName) {
     if (gateName !== 'entry' && gateName !== 'exit') return;
     currentGate = gateName;
 
-    // Update tab button highlights
-    const tabEntry = document.getElementById('tabEntry');
-    const tabExit = document.getElementById('tabExit');
-
-    if (tabEntry && tabExit) {
-        if (currentGate === 'entry') {
-            tabEntry.classList.add('active');
-            tabExit.classList.remove('active');
-        } else {
-            tabExit.classList.add('active');
-            tabEntry.classList.remove('active');
-        }
-    }
-
     renderSingleGateView();
 }
 
 // Single Visualizer Renderer
 function renderSingleGateView() {
-    const activeState = (gateStates.entry || 'CLOSED').toUpperCase();
-    
-    // Icon and Title
+    const activeState = (gateStates[currentGate] || 'CLOSED').toUpperCase();
+
     const iconElem = document.getElementById('activeGateIcon');
     const titleElem = document.getElementById('activeGateTitle');
     const badgeElem = document.getElementById('activeGateStatus');
     const armElem = document.getElementById('activeArmVisual');
     const lightElem = document.getElementById('activeLightVisual');
 
-    if (iconElem) {
-        iconElem.textContent = '🚗';
-    }
-
+    if (iconElem) iconElem.textContent = '🚗';
     if (titleElem) {
-        titleElem.textContent = 'Main Gate & Barrier';
+        titleElem.textContent = currentGate === 'entry'
+            ? 'Entry Gate & Barrier'
+            : 'Exit Gate & Barrier';
     }
 
     if (badgeElem) {
-        badgeElem.textContent = activeState;
-        badgeElem.className = activeState === 'OPEN' ? 'status-pill status-open' : 'status-pill status-closed';
+        badgeElem.textContent = gateStateConfirmed || activeState === 'UNKNOWN'
+            ? activeState
+            : `${activeState} · LAST KNOWN`;
+        badgeElem.className = !gateStateConfirmed
+            ? 'status-pill status-offline'
+            : activeState === 'OPEN'
+                ? 'status-pill status-open'
+                : activeState === 'CLOSED'
+                    ? 'status-pill status-closed'
+                    : 'status-pill status-offline';
     }
 
     if (armElem) {
@@ -105,13 +102,18 @@ function renderSingleGateView() {
 // Barrier Status Fetch & Visualizer Update
 async function fetchGateStatus() {
     try {
-        const response = await fetch('/api/gates/status');
-        if (!response.ok) {
-            throw new Error(`Server status ${response.status}`);
+        const [gateResponse, parkingResponse] = await Promise.all([
+            fetch('/api/gates/status'),
+            fetch('/api/parking/status')
+        ]);
+        if (!gateResponse.ok || !parkingResponse.ok) {
+            throw new Error(`Server status ${gateResponse.status}/${parkingResponse.status}`);
         }
-        
-        const data = await response.json();
+
+        const data = await gateResponse.json();
+        const parkingData = await parkingResponse.json();
         updateUIWithGateData(data);
+        updateParkingUI(parkingData);
 
     } catch (error) {
         console.error('Failed to fetch gate status:', error);
@@ -119,15 +121,33 @@ async function fetchGateStatus() {
     }
 }
 
+function updateReverseWarningUI(data) {
+    const badge = document.getElementById('rwStatus');
+    const pulse = document.getElementById('rwPulse');
+
+    if (!badge || !pulse) return;
+
+    const active = Boolean(data.active || data.reverseWarning);
+
+    if (active) {
+        badge.textContent = 'ACTIVE';
+        badge.className = 'status-pill status-offline';
+        pulse.className = 'pulse-dot pulse-red';
+    } else {
+        badge.textContent = 'INACTIVE';
+        badge.className = 'status-pill status-online';
+        pulse.className = 'pulse-dot pulse-green';
+    }
+}
+
 function updateUIWithGateData(data) {
-    // ESP32 Status
     const espBadge = document.getElementById('espStatus');
     const espPulse = document.getElementById('espPulse');
-    const espText = data.esp32Status || 'Online';
-    
+    const espText = data.esp32Status || 'Disconnected';
+
     if (espBadge) {
         espBadge.textContent = espText;
-        if (espText.includes('Offline')) {
+        if (!data.hardwareConnected) {
             espBadge.className = 'status-pill status-offline';
             if (espPulse) espPulse.className = 'pulse-dot pulse-red';
         } else {
@@ -136,29 +156,38 @@ function updateUIWithGateData(data) {
         }
     }
 
-    // Cache Entrance & Exit States
-    const entryState = (data.entryGate || 'CLOSED').toUpperCase();
-    const exitState = (data.exitGate || 'CLOSED').toUpperCase();
-    
-    gateStates.entry = entryState;
-    gateStates.exit = exitState;
-
-    // Overview Summary Badges
-    const entryBadge = document.getElementById('entryStatus');
-    const exitBadge = document.getElementById('exitStatus');
-
-    if (entryBadge) {
-        entryBadge.textContent = entryState;
-        entryBadge.className = entryState === 'OPEN' ? 'status-pill status-open' : 'status-pill status-closed';
+    const previousEntryState = gateStates.entry;
+    gateStates.entry = (data.entryGate || 'UNKNOWN').toUpperCase();
+    gateStates.exit = 'UNSUPPORTED';
+    gateStateConfirmed = Boolean(data.gateStateConfirmed);
+    gateControlEnabled = Boolean(data.gateControlEnabled);
+    entryOpenAllowed = Boolean(data.entryOpenAllowed);
+    gateCommandState = data.commandState || 'IDLE';
+    const commandStatus = document.getElementById('gate-command-status');
+    if (commandStatus) {
+        commandStatus.textContent = data.commandMessage || 'No gate command reported.';
+        commandStatus.dataset.state = gateCommandState.toLowerCase();
+    }
+    const updateLabel = document.getElementById('lastHardwareUpdate');
+    if (updateLabel) {
+        updateLabel.textContent = data.lastHardwareUpdate
+            ? new Date(data.lastHardwareUpdate).toLocaleString()
+            : 'Not received';
+        updateLabel.className = data.hardwareConnected
+            ? 'status-pill status-online'
+            : 'status-pill status-offline';
     }
 
-    if (exitBadge) {
-        exitBadge.textContent = exitState;
-        exitBadge.className = exitState === 'OPEN' ? 'status-pill status-open' : 'status-pill status-closed';
-    }
-
-    // Render single visualizer stage
     renderSingleGateView();
+    updateGateControlButtons(data.commandState);
+    if (gateStates.entry !== previousEntryState) {
+        tickVehicleSimulation();
+        if (gateStates.entry === 'OPEN') {
+            addActivityLog('🔓 Gate OPENED — confirmed by hardware');
+        } else if (gateStates.entry === 'CLOSED') {
+            addActivityLog('🔒 Gate CLOSED — confirmed by hardware');
+        }
+    }
 }
 
 function updateUIForOffline() {
@@ -169,6 +198,52 @@ function updateUIForOffline() {
         espBadge.className = 'status-pill status-offline';
     }
     if (espPulse) espPulse.className = 'pulse-dot pulse-red';
+    gateControlEnabled = false;
+    updateGateControlButtons('FAILED');
+}
+
+function updateGateControlButtons(commandState = gateCommandState) {
+    const token = document.getElementById('gateControlToken');
+    const authorized = Boolean(token && token.value.trim());
+    const pending = String(commandState).toUpperCase() === 'PENDING';
+    const canOpen = gateControlEnabled && entryOpenAllowed && authorized && !parkingIsFull && !pending;
+    const canClose = gateControlEnabled && authorized && !pending;
+    const openButton = document.getElementById('openActiveBtn');
+    const closeButton = document.getElementById('closeActiveBtn');
+    if (openButton) openButton.disabled = !canOpen;
+    if (closeButton) closeButton.disabled = !canClose;
+}
+
+function updateParkingUI(data) {
+    if (!data || !Array.isArray(data.slots) || data.slots.length !== 4) {
+        throw new Error('Backend returned an invalid four-slot parking response');
+    }
+    parkingIsFull = Boolean(data.full);
+    const fullWarning = document.getElementById('guard-parking-full');
+    if (fullWarning) fullWarning.hidden = !parkingIsFull;
+
+    const dataWarning = document.getElementById('guard-parking-data');
+    if (dataWarning) {
+        dataWarning.hidden = !data.stale && Number(data.unknownSlots || 0) === 0;
+        dataWarning.textContent = data.stale
+            ? 'ESP32 occupancy telemetry is stale or disconnected.'
+            : `${Number(data.unknownSlots || 0)} slot sensor(s) currently have unknown readings.`;
+    }
+
+    data.slots.forEach(slot => {
+        const badge = document.getElementById(`guard-slot-${slot.slotNumber}`);
+        if (!badge) return;
+        const status = !slot.known
+            ? 'Unknown'
+            : `${slot.occupied ? 'Occupied' : 'Available'}${slot.sensorFresh ? '' : ' · stale'}`;
+        badge.textContent = `Slot ${slot.slotNumber}: ${status}`;
+        badge.className = !slot.known || !slot.sensorFresh
+            ? 'status-pill status-offline'
+            : slot.occupied ? 'status-pill status-open' : 'status-pill status-online';
+    });
+
+    updateReverseWarningUI({ active: Boolean(data.slots[1].reverseWarning) });
+    updateGateControlButtons();
 }
 
 // Barrier Control Action Handler
@@ -188,12 +263,26 @@ async function controlBarrier(gate, action, buttonId) {
         msgBox.className = 'message-toast';
     }
 
+    if (gate !== 'entry') {
+        showNotification('The connected firmware does not support a separate exit-gate command.', 'error');
+        return;
+    }
+    if (action === 'open' && parkingIsFull) {
+        showNotification('PARKING FULL — entry opening is blocked.', 'error');
+        updateGateControlButtons();
+        return;
+    }
+
     const endpoint = `/api/gates/${gate}/${action}`;
+    const controlToken = document.getElementById('gateControlToken')?.value.trim();
 
     try {
         const response = await fetch(endpoint, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Gate-Control-Token': controlToken || ''
+            }
         });
 
         const result = await response.json();
@@ -203,12 +292,11 @@ async function controlBarrier(gate, action, buttonId) {
             throw new Error(errorText);
         }
 
-        const successMsg = action === 'open' ? 'Barrier opened successfully!' : 'Barrier closed successfully!';
+        const successMsg = result.commandMessage || result.message || 'Command accepted; awaiting ESP32 confirmation.';
         showNotification(successMsg, 'success');
-        addActivityLog(successMsg);
+        addActivityLog(`${action.toUpperCase()} command pending confirmation`);
         
         await fetchGateStatus();
-        tickVehicleSimulation(); // Trigger vehicle check instantly
 
     } catch (error) {
         console.error(`Error executing ${action} on barrier:`, error);
@@ -243,11 +331,11 @@ function closeEntryBarrier() {
 }
 
 function openExitBarrier() {
-    return controlBarrier('exit', 'open', 'openActiveBtn');
+    return Promise.resolve(showNotification('Exit is operated by the firmware exit sensor; separate remote control is unavailable.', 'error'));
 }
 
 function closeExitBarrier() {
-    return controlBarrier('exit', 'close', 'openActiveBtn');
+    return Promise.resolve(showNotification('Exit is operated by the firmware exit sensor; separate remote control is unavailable.', 'error'));
 }
 
 // Activity Log Helper
@@ -323,43 +411,13 @@ function tickVehicleSimulation() {
                 car.classList.add('vehicle-facing-right');
                 car.style.left = '320px'; // Smoothly drives into the campus
                 setTimeout(() => {
-                    vehicleState = 'PARKED_PAUSE';
+                    vehicleState = 'PARKED';
                     isVehicleAnimating = false;
-                    setTimeout(() => {
-                        if (vehicleState === 'PARKED_PAUSE') {
-                            car.classList.remove('vehicle-facing-right'); // Turns around towards exit
-                            vehicleState = 'APPROACHING_EXIT';
-                        }
-                    }, 2500);
                 }, 2100);
             }
             break;
 
-        case 'APPROACHING_EXIT':
-            isVehicleAnimating = true;
-            car.classList.remove('vehicle-facing-right');
-            car.style.left = '160px'; // Waits at exit line
-            setTimeout(() => {
-                vehicleState = 'WAITING_EXIT';
-                isVehicleAnimating = false;
-            }, 2100);
-            break;
-
-        case 'WAITING_EXIT':
-            if (currentBarrierState === 'OPEN') {
-                isVehicleAnimating = true;
-                car.classList.remove('vehicle-facing-right');
-                car.style.left = '-80px'; // Drives out smoothly
-                setTimeout(() => {
-                    vehicleState = 'RESET_PAUSE';
-                    isVehicleAnimating = false;
-                    setTimeout(() => {
-                        car.classList.add('vehicle-facing-right');
-                        car.style.left = '-60px';
-                        vehicleState = 'APPROACHING_ENTRY';
-                    }, 2000);
-                }, 2100);
-            }
+        case 'PARKED':
             break;
     }
 }
@@ -377,7 +435,11 @@ window.onHardwareVehicleDetected = function() {
 };
 
 window.onHardwareVehicleCleared = function() {
-    vehicleState = 'RESET_PAUSE';
+    const car = document.getElementById('simVehicle');
+    if (!car) return;
+    car.classList.add('vehicle-facing-right');
+    car.style.left = '-60px';
+    vehicleState = 'APPROACHING_ENTRY';
     tickVehicleSimulation();
 };
 
@@ -404,6 +466,9 @@ function createRipple(event) {
 
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
+    fetchGateStatus();
+    const tokenInput = document.getElementById('gateControlToken');
+    if (tokenInput) tokenInput.addEventListener('input', () => updateGateControlButtons());
     fetchGateStatus();
     setInterval(fetchGateStatus, 3000);
     startVehicleSimulation();

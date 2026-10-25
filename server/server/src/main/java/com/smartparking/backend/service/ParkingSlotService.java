@@ -23,7 +23,33 @@ public class ParkingSlotService {
      */
     @Transactional(readOnly = true)
     public List<ParkingSlot> getAllSlots() {
-        return parkingSlotRepository.findAllByOrderBySlotNumberAsc();
+        return parkingSlotRepository.findAllByOrderBySlotNumberAsc().stream()
+                .filter(slot -> slot.getSlotNumber() >= 1 && slot.getSlotNumber() <= 4)
+                .toList();
+    }
+
+    /**
+     * Retrieves the number of available (unoccupied) parking slots.
+     */
+    @Transactional(readOnly = true)
+    public long countAvailableSlots() {
+        return getAllSlots().stream().filter(slot -> !slot.isOccupied()).count();
+    }
+
+    /**
+     * Retrieves the number of occupied parking slots.
+     */
+    @Transactional(readOnly = true)
+    public long countOccupiedSlots() {
+        return getAllSlots().stream().filter(ParkingSlot::isOccupied).count();
+    }
+
+    /**
+     * Retrieves all available (unoccupied) parking slots.
+     */
+    @Transactional(readOnly = true)
+    public List<ParkingSlot> getAvailableSlots() {
+        return getAllSlots().stream().filter(slot -> !slot.isOccupied()).toList();
     }
 
     /**
@@ -69,10 +95,11 @@ public class ParkingSlotService {
             throw new IllegalArgumentException("Slot number is required");
         }
 
-        if (slot.getCategory() == null || slot.getCategory().trim().isEmpty()) {
-            throw new IllegalArgumentException("Slot category is required");
+        if (slot.getCategory() == null || slot.getCategory().isBlank()) {
+            throw new IllegalArgumentException("Category is required");
         }
 
+        validatePhysicalSlotNumber(slot.getSlotNumber());
         if (parkingSlotRepository.findBySlotNumber(slot.getSlotNumber()).isPresent()) {
             throw new IllegalStateException(
                     "Parking slot already exists: " + slot.getSlotNumber());
@@ -102,10 +129,10 @@ public class ParkingSlotService {
         if (updatedSlot.getSlotNumber() == null) {
             throw new IllegalArgumentException("Slot number is required");
         }
+        validatePhysicalSlotNumber(updatedSlot.getSlotNumber());
 
-        if (updatedSlot.getCategory() == null ||
-                updatedSlot.getCategory().trim().isEmpty()) {
-            throw new IllegalArgumentException("Slot category is required");
+        if (updatedSlot.getCategory() == null || updatedSlot.getCategory().isBlank()) {
+            throw new IllegalArgumentException("Category is required");
         }
 
         // Check whether another slot already uses the new slot number.
@@ -143,8 +170,6 @@ public class ParkingSlotService {
 
     /**
      * Updates the occupancy status of a parking slot.
-     *
-     * This method can later be used by the IoT/ESP32 integration.
      */
     @Transactional
     public ParkingSlot updateOccupancy(Long id, boolean occupied) {
@@ -156,22 +181,21 @@ public class ParkingSlotService {
     }
 
     /**
-     * Updates the sensor distance and occupancy information.
+     * Sets the reverse-manoeuvre warning flag for a slot.
      *
-     * This method is intended for future ESP32 sensor integration.
+     * Driven by the serial bridge when the firmware reports an object behind
+     * the reverse-parking slot (slot 2).
      */
     @Transactional
-    public ParkingSlot updateSensorStatus(
-            Long id,
-            Double distanceCm,
-            boolean occupied) {
+    public void setReverseWarning(Integer slotNumber, boolean active) {
+        ParkingSlot slot = getSlotByNumber(slotNumber);
+        slot.setReverseWarning(active);
+        parkingSlotRepository.save(slot);
+    }
 
-        ParkingSlot slot = getSlotById(id);
-
-        slot.setLastDistanceCm(distanceCm);
-        slot.setLastSensorUpdate(java.time.LocalDateTime.now());
-        slot.setOccupied(occupied);
-
-        return parkingSlotRepository.save(slot);
+    private void validatePhysicalSlotNumber(Integer slotNumber) {
+        if (slotNumber < 1 || slotNumber > 4) {
+            throw new IllegalArgumentException("Physical parking slot number must be between 1 and 4");
+        }
     }
 }

@@ -7,9 +7,10 @@ import org.springframework.stereotype.Repository;
 
 import com.smartparking.backend.model.Gate;
 import com.smartparking.backend.model.GateType;
+import com.smartparking.backend.model.GateStatus;
 
 @Repository
 public interface GateRepository extends JpaRepository<Gate, Long> {
-    Optional<Gate> findByGateType(GateType gateType);
     Optional<Gate> findByGateName(String gateName);
+    Optional<Gate> findByGateType(GateType gateType);
 }

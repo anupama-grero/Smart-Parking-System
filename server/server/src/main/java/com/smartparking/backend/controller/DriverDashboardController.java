@@ -10,4 +10,9 @@ public class DriverDashboardController {
     public String driverDashboard() {
         return "driver-dashboard";
     }
+
+    @GetMapping("/favicon.ico")
+    public String favicon() {
+        return "redirect:/favicon.svg";
+    }
 }

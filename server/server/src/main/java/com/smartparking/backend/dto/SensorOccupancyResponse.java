@@ -10,6 +10,7 @@ public class SensorOccupancyResponse {
     private boolean occupied;
     private String availability;
     private boolean heldByActiveSession;
+    private boolean reverseWarning;
     private LocalDateTime updatedAt;
 
     public SensorOccupancyResponse() {}
@@ -17,12 +18,20 @@ public class SensorOccupancyResponse {
     public SensorOccupancyResponse(Integer slotId, Integer sensorId, Double distance,
                                    boolean occupied, String availability,
                                    boolean heldByActiveSession, LocalDateTime updatedAt) {
+        this(slotId, sensorId, distance, occupied, availability, heldByActiveSession, false, updatedAt);
+    }
+
+    public SensorOccupancyResponse(Integer slotId, Integer sensorId, Double distance,
+                                   boolean occupied, String availability,
+                                   boolean heldByActiveSession, boolean reverseWarning,
+                                   LocalDateTime updatedAt) {
         this.slotId = slotId;
         this.sensorId = sensorId;
         this.distance = distance;
         this.occupied = occupied;
         this.availability = availability;
         this.heldByActiveSession = heldByActiveSession;
+        this.reverseWarning = reverseWarning;
         this.updatedAt = updatedAt;
     }
 
@@ -72,6 +81,14 @@ public class SensorOccupancyResponse {
 
     public void setHeldByActiveSession(boolean heldByActiveSession) {
         this.heldByActiveSession = heldByActiveSession;
+    }
+
+    public boolean isReverseWarning() {
+        return reverseWarning;
+    }
+
+    public void setReverseWarning(boolean reverseWarning) {
+        this.reverseWarning = reverseWarning;
     }
 
     public LocalDateTime getUpdatedAt() {

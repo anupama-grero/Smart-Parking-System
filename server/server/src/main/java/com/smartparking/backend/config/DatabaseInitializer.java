@@ -27,14 +27,10 @@ public class DatabaseInitializer implements CommandLineRunner {
     public void run(String... args) {
         if (parkingSlotRepository.count() == 0) {
             parkingSlotRepository.saveAll(List.of(
-                    new ParkingSlot(1, "Undergraduates", false),
-                    new ParkingSlot(2, "Short Courses Students", false),
-                    new ParkingSlot(3, "Visiting Lecturers", false),
-                    new ParkingSlot(4, "Visitors", false),
-                    new ParkingSlot(5, "Lecturers", false),
-                    new ParkingSlot(6, "Short Course Teachers", false),
-                    new ParkingSlot(7, "Academic Staff", false),
-                    new ParkingSlot(8, "Non-Academic Staff", false)
+                    new ParkingSlot(1, false),
+                    new ParkingSlot(2, false),
+                    new ParkingSlot(3, false),
+                    new ParkingSlot(4, false)
             ));
         }
 

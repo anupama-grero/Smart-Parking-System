@@ -1,125 +1,145 @@
 package com.smartparking.backend;
 
-import com.smartparking.backend.model.Gate;
-import com.smartparking.backend.model.GateStatus;
-import com.smartparking.backend.model.GateType;
-import com.smartparking.backend.repository.GateRepository;
+import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.smartparking.backend.model.Gate;
+import com.smartparking.backend.model.GateStatus;
+import com.smartparking.backend.model.GateType;
+import com.smartparking.backend.model.ParkingSlot;
+import com.smartparking.backend.repository.GateRepository;
+import com.smartparking.backend.repository.ParkingSlotRepository;
 
 @SpringBootTest
+@TestPropertySource(properties = {
+        "esp32.gate-control-token=test-token",
+        "esp32.serial.port="
+})
 class GateIntegrationTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
 
-    private MockMvc mockMvc;
-
     @Autowired
     private GateRepository gateRepository;
+
+    @Autowired
+    private ParkingSlotRepository slotRepository;
+
+    private MockMvc mockMvc;
 
     @BeforeEach
     void setup() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
-
-        // Ensure default gates exist and are closed before each test
-        Gate entrance = gateRepository.findByGateType(GateType.ENTRANCE)
-                .orElseGet(() -> new Gate("Main Entrance Gate", GateType.ENTRANCE, GateStatus.CLOSED));
-        entrance.setStatus(GateStatus.CLOSED);
-        gateRepository.save(entrance);
-
-        Gate exit = gateRepository.findByGateType(GateType.EXIT)
-                .orElseGet(() -> new Gate("Main Exit Gate", GateType.EXIT, GateStatus.CLOSED));
-        exit.setStatus(GateStatus.CLOSED);
-        gateRepository.save(exit);
+        for (int number = 1; number <= 4; number++) {
+            ParkingSlot slot = slotRepository.findBySlotNumber(number).orElseThrow();
+            slot.setOccupied(false);
+            slot.setLastDistanceCm(null);
+            slot.setLastSensorUpdate(null);
+            slotRepository.save(slot);
+        }
+        gateRepository.findByGateType(GateType.ENTRANCE).ifPresent(gate -> {
+            gate.setStatus(GateStatus.CLOSED);
+            gateRepository.save(gate);
+        });
     }
 
     @Test
-    void testGateDatabasePersistenceOnEntryOpenAndClose() throws Exception {
-        // 1. Initial State from DB
-        Gate initialGate = gateRepository.findByGateType(GateType.ENTRANCE).orElseThrow();
-        assertEquals(GateStatus.CLOSED, initialGate.getStatus());
+    void gateStatusReportsDisconnectedHardwareAndUnknownPhysicalState() throws Exception {
+        mockMvc.perform(get("/api/gates/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.entryGate", is("UNKNOWN")))
+                .andExpect(jsonPath("$.exitGate", is("UNSUPPORTED")))
+                .andExpect(jsonPath("$.hardwareConnected", is(false)))
+                .andExpect(jsonPath("$.gateStateConfirmed", is(false)));
+    }
 
-        // 2. Open Entrance via API
+    @Test
+    void unauthorizedGateRequestIsRejected() throws Exception {
         mockMvc.perform(post("/api/gates/entry/open"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.entryGate").value("OPEN"));
-
-        // Verify Database has been updated
-        Gate openedGate = gateRepository.findByGateType(GateType.ENTRANCE).orElseThrow();
-        assertEquals(GateStatus.OPEN, openedGate.getStatus());
-        assertNotNull(openedGate.getUpdatedAt());
-
-        // 3. Close Entrance via API
-        mockMvc.perform(post("/api/gates/entry/close"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.entryGate").value("CLOSED"));
-
-        // Verify Database has been updated to CLOSED
-        Gate closedGate = gateRepository.findByGateType(GateType.ENTRANCE).orElseThrow();
-        assertEquals(GateStatus.CLOSED, closedGate.getStatus());
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    void testGateDatabasePersistenceOnExitOpenAndClose() throws Exception {
-        // 1. Initial State from DB
-        Gate initialGate = gateRepository.findByGateType(GateType.EXIT).orElseThrow();
-        assertEquals(GateStatus.CLOSED, initialGate.getStatus());
+    void failedHardwareCommandIsNotReportedAsPhysicalSuccess() throws Exception {
+        sendValidFourSlotBatch();
 
-        // 2. Open Exit via API
-        mockMvc.perform(post("/api/gates/exit/open"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.exitGate").value("OPEN"));
-
-        // Verify Database
-        Gate openedGate = gateRepository.findByGateType(GateType.EXIT).orElseThrow();
-        assertEquals(GateStatus.OPEN, openedGate.getStatus());
-
-        // 3. Close Exit via API
-        mockMvc.perform(post("/api/gates/exit/close"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.exitGate").value("CLOSED"));
-
-        // Verify Database
-        Gate closedGate = gateRepository.findByGateType(GateType.EXIT).orElseThrow();
-        assertEquals(GateStatus.CLOSED, closedGate.getStatus());
-    }
-
-    @Test
-    void testGateStatusEndpointFetchesFromDatabase() throws Exception {
-        // Manually update DB status
-        Gate entrance = gateRepository.findByGateType(GateType.ENTRANCE).orElseThrow();
-        entrance.setStatus(GateStatus.OPEN);
-        gateRepository.save(entrance);
+        mockMvc.perform(post("/api/gates/entry/open")
+                        .header("X-Gate-Control-Token", "test-token"))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.status", is("error")));
 
         mockMvc.perform(get("/api/gates/status"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.entryGate").value("OPEN"))
-                .andExpect(jsonPath("$.exitGate").value("CLOSED"));
+                .andExpect(jsonPath("$.entryGate", is("UNKNOWN")))
+                .andExpect(jsonPath("$.gateStateConfirmed", is(false)));
     }
 
     @Test
-    void testControlEndpointWithJsonPayloadUpdatesDatabase() throws Exception {
-        String jsonPayload = "{\"gate\":\"ENTRANCE\",\"action\":\"OPEN\"}";
+    void entryRequestIsRejectedWhenAllFourSlotsAreOccupied() throws Exception {
+        for (int number = 1; number <= 4; number++) {
+            ParkingSlot slot = slotRepository.findBySlotNumber(number).orElseThrow();
+            slot.setOccupied(true);
+            slotRepository.save(slot);
+        }
 
-        mockMvc.perform(post("/api/gates/control")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonPayload))
+        mockMvc.perform(post("/api/gates/entry/open")
+                        .header("X-Gate-Control-Token", "test-token"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", org.hamcrest.Matchers.containsString("all four")));
+    }
+
+    @Test
+    void legacyCommandPollingNeverTriggersACommand() throws Exception {
+        mockMvc.perform(get("/api/gate/entry/command"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.entryGate").value("OPEN"));
+                .andExpect(content().string("CLOSED"));
+        mockMvc.perform(get("/api/gate/exit/command"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("CLOSED"));
+    }
 
-        Gate gate = gateRepository.findByGateType(GateType.ENTRANCE).orElseThrow();
-        assertEquals(GateStatus.OPEN, gate.getStatus());
+    @Test
+    void exitAutomaticSensorPathIsNotCapacityBlockedByBackend() throws Exception {
+        List<ParkingSlot> slots = slotRepository.findAllByOrderBySlotNumberAsc();
+        slots.stream().filter(slot -> slot.getSlotNumber() >= 1 && slot.getSlotNumber() <= 4)
+                .forEach(slot -> {
+                    slot.setOccupied(true);
+                    slotRepository.save(slot);
+                });
+
+        // Remote exit commands are unsupported for this single-servo firmware;
+        // exit remains driven locally by its unchanged sensor logic.
+        mockMvc.perform(get("/api/gates/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message", org.hamcrest.Matchers.containsString("sensor-controlled")));
+    }
+
+    private void sendValidFourSlotBatch() throws Exception {
+        String payload = "{\"availableSlots\":4,\"occupiedSlots\":0,\"slots\":["
+                + "{\"slotNumber\":1,\"occupied\":false,\"distanceCm\":100},"
+                + "{\"slotNumber\":2,\"occupied\":false,\"distanceCm\":100},"
+                + "{\"slotNumber\":3,\"occupied\":false,\"distanceCm\":100},"
+                + "{\"slotNumber\":4,\"occupied\":false,\"distanceCm\":100}]}";
+        mockMvc.perform(post("/api/sensors/occupancy/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
     }
 }

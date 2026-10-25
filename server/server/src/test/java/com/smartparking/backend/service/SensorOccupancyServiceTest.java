@@ -41,8 +41,8 @@ class SensorOccupancyServiceTest {
 
     @BeforeEach
     void setUp() {
-        SensorSlotMapper mapper = new SensorSlotMapper(1, 8);
-        service = new SensorOccupancyService(slotRepository, sessionRepository, mapper, 50.0, 400.0);
+        SensorSlotMapper mapper = new SensorSlotMapper(1, 4);
+        service = new SensorOccupancyService(slotRepository, sessionRepository, mapper, 5.0, 3.0, 400.0);
         slot1 = new ParkingSlot(1L, 1, "Undergraduates", false);
     }
 
@@ -68,11 +68,40 @@ class SensorOccupancyServiceTest {
                 .thenReturn(Optional.empty());
         when(slotRepository.save(any(ParkingSlot.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        SensorOccupancyResponse response = service.processReading(new SensorOccupancyRequest(1, 12.5));
+        SensorOccupancyResponse response = service.processReading(new SensorOccupancyRequest(1, 2.5));
 
         assertTrue(response.isOccupied());
         assertEquals("OCCUPIED", response.getAvailability());
         assertTrue(slot1.isOccupied());
+    }
+
+    @Test
+    void distanceAboveFirmwareThresholdMarksAvailable() {
+        when(slotRepository.findBySlotNumber(1)).thenReturn(Optional.of(slot1));
+        when(sessionRepository.findByParkingSlotAndStatus(slot1, SessionStatus.ACTIVE))
+                .thenReturn(Optional.empty());
+        when(slotRepository.save(any(ParkingSlot.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SensorOccupancyResponse response = service.processReading(new SensorOccupancyRequest(1, 5.1));
+
+        assertFalse(response.isOccupied());
+        assertEquals("AVAILABLE", response.getAvailability());
+    }
+
+    @Test
+    void reverseWarningUsesFirmwareSafetyThreshold() {
+        ParkingSlot slot2 = new ParkingSlot(2L, 2, "General", false);
+        when(slotRepository.findBySlotNumber(2)).thenReturn(Optional.of(slot2));
+        when(sessionRepository.findByParkingSlotAndStatus(slot2, SessionStatus.ACTIVE))
+                .thenReturn(Optional.empty());
+        when(slotRepository.save(any(ParkingSlot.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SensorOccupancyResponse warning = service.processReading(new SensorOccupancyRequest(2, 3.0));
+        SensorOccupancyResponse noWarning = service.processReading(new SensorOccupancyRequest(2, 3.1));
+
+        assertTrue(warning.isReverseWarning());
+        assertFalse(noWarning.isReverseWarning());
+        assertTrue(noWarning.isOccupied());
     }
 
     @Test
@@ -106,6 +135,15 @@ class SensorOccupancyServiceTest {
     }
 
     @Test
+    void nonFiniteDistanceIsRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.processReading(new SensorOccupancyRequest(1, Double.NaN)));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.processReading(new SensorOccupancyRequest(1, Double.POSITIVE_INFINITY)));
+        verify(slotRepository, never()).save(any());
+    }
+
+    @Test
     void unknownSensorIsRejected() {
         assertThrows(IllegalArgumentException.class,
                 () -> service.processReading(new SensorOccupancyRequest(null, 9, 20.0)));
@@ -125,7 +163,7 @@ class SensorOccupancyServiceTest {
         when(sessionRepository.findByParkingSlotAndStatus(any(), any())).thenReturn(Optional.empty());
         when(slotRepository.save(any(ParkingSlot.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        SensorOccupancyResponse response = service.processReading(new SensorOccupancyRequest(null, 3, 10.0));
+        SensorOccupancyResponse response = service.processReading(new SensorOccupancyRequest(null, 3, 4.0));
 
         assertEquals(3, response.getSlotId());
         assertEquals(3, response.getSensorId());

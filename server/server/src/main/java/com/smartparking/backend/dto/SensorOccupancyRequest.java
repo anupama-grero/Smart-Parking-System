@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 
 /**
  * Incoming HC-SR04 reading from the ESP32.
- * Provide {@code slotId} and/or {@code sensorId} (1–8 map 1:1 to campus slots).
+ * Provide {@code slotId} and/or {@code sensorId} (1–4 map 1:1 to campus slots).
  */
 public class SensorOccupancyRequest {
 

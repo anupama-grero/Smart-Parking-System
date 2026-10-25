@@ -12,4 +12,7 @@ import com.smartparking.backend.model.ParkingSlot;
 public interface ParkingSlotRepository extends JpaRepository<ParkingSlot, Long> {
     Optional<ParkingSlot> findBySlotNumber(Integer slotNumber);
     List<ParkingSlot> findAllByOrderBySlotNumberAsc();
+    long countByIsOccupiedFalse();
+    long countByIsOccupiedTrue();
+    List<ParkingSlot> findAllByIsOccupiedFalseOrderBySlotNumberAsc();
 }

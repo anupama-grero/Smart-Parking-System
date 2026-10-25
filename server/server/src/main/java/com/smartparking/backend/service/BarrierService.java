@@ -1,213 +1,229 @@
 package com.smartparking.backend.service;
 
+import java.time.Instant;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
+
 import com.smartparking.backend.dto.GateStatusResponse;
-import com.smartparking.backend.exception.Esp32CommunicationException;
-import com.smartparking.backend.exception.Esp32UnavailableException;
 import com.smartparking.backend.exception.InvalidGateException;
 import com.smartparking.backend.model.Gate;
 import com.smartparking.backend.model.GateAction;
 import com.smartparking.backend.model.GateStatus;
 import com.smartparking.backend.model.GateType;
 import com.smartparking.backend.repository.GateRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestTemplate;
-
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.Optional;
+import com.smartparking.backend.repository.ParkingSlotRepository;
 
 @Service
 public class BarrierService {
 
     private final GateRepository gateRepository;
-    private final RestTemplate restTemplate;
-    private final String esp32BaseUrl;
-    private final boolean mockModeEnabled;
+    private final ParkingSlotRepository slotRepository;
+    private final Esp32SerialService serialService;
+    private final SensorOccupancyService occupancyService;
+    private final String gateControlToken;
+    private final int staleAfterSeconds;
 
-    private GateStatus entranceGateState = GateStatus.CLOSED;
-    private GateStatus exitGateState = GateStatus.CLOSED;
-
-    @Autowired
     public BarrierService(
             GateRepository gateRepository,
-            @Value("${esp32.base-url:http://192.168.1.100}") String esp32BaseUrl,
-            @Value("${esp32.connect-timeout-ms:3000}") int connectTimeoutMs,
-            @Value("${esp32.read-timeout-ms:3000}") int readTimeoutMs,
-            @Value("${esp32.mock-mode-enabled:true}") boolean mockModeEnabled
-    ) {
+            ParkingSlotRepository slotRepository,
+            Esp32SerialService serialService,
+            SensorOccupancyService occupancyService,
+            @Value("${esp32.gate-control-token:}") String gateControlToken,
+            @Value("${parking.sensor.stale-after-seconds:10}") int staleAfterSeconds) {
         this.gateRepository = gateRepository;
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(connectTimeoutMs);
-        factory.setReadTimeout(readTimeoutMs);
-        this.restTemplate = new RestTemplate(factory);
-        this.esp32BaseUrl = esp32BaseUrl;
-        this.mockModeEnabled = mockModeEnabled;
-    }
-
-    // Convenience constructor for tests without repository
-    public BarrierService(
-            String esp32BaseUrl,
-            int connectTimeoutMs,
-            int readTimeoutMs,
-            boolean mockModeEnabled
-    ) {
-        this(null, esp32BaseUrl, connectTimeoutMs, readTimeoutMs, mockModeEnabled);
+        this.slotRepository = slotRepository;
+        this.serialService = serialService;
+        this.occupancyService = occupancyService;
+        this.gateControlToken = gateControlToken;
+        this.staleAfterSeconds = staleAfterSeconds;
     }
 
     public GateStatusResponse getGateStatus() {
-        String esp32Health = checkEsp32Health();
-        
-        String entryStatus = entranceGateState.name();
-        String exitStatus = exitGateState.name();
+        syncReportedGateState();
+        String entryStatus = serialService.getGateState() == null
+                ? "UNKNOWN"
+                : serialService.getGateState().name();
+        String espStatus = serialService.isConnected()
+                ? "Connected"
+                : serialService.isConfigured() ? "Disconnected" : "Not configured";
 
-        if (gateRepository != null) {
-            Optional<Gate> entranceGate = gateRepository.findByGateType(GateType.ENTRANCE);
-            if (entranceGate.isPresent()) {
-                entryStatus = entranceGate.get().getStatus().name();
-                entranceGateState = entranceGate.get().getStatus();
-            }
-
-            Optional<Gate> exitGate = gateRepository.findByGateType(GateType.EXIT);
-            if (exitGate.isPresent()) {
-                exitStatus = exitGate.get().getStatus().name();
-                exitGateState = exitGate.get().getStatus();
-            }
-        }
-
-        return new GateStatusResponse(
-                esp32Health,
+        GateStatusResponse response = new GateStatusResponse(
+                espStatus,
                 entryStatus,
-                exitStatus,
-                "Gate status fetched successfully"
-        );
+                "UNSUPPORTED",
+                "Firmware exposes one shared gate; exit movement remains sensor-controlled.");
+        response.setHardwareConnected(serialService.isConnected());
+        response.setGateStateConfirmed(serialService.isGateStateConfirmed());
+        response.setCommandState(serialService.getCommandState());
+        response.setRequestedGateState(serialService.getRequestedState() == null
+                ? null
+                : serialService.getRequestedState().name());
+        response.setCommandMessage(serialService.getCommandMessage());
+        Instant lastUpdate = serialService.getLastCommunicationAt();
+        response.setLastHardwareUpdate(lastUpdate == null ? null : lastUpdate.toString());
+        response.setGateControlEnabled(serialService.isConnected() && !gateControlToken.isBlank());
+        response.setEntryOpenAllowed(
+                response.isGateControlEnabled() && !isParkingFull() && isParkingDataTrusted());
+        return response;
     }
 
     public String checkEsp32Health() {
-        if (mockModeEnabled) {
-            return "Online (Mock)";
+        if (serialService.isConnected()) {
+            return "Connected";
         }
-        try {
-            ResponseEntity<Map> response = restTemplate.getForEntity(esp32BaseUrl + "/api/health", Map.class);
-            if (response.getStatusCode().is2xxSuccessful()) {
-                return "Online";
-            }
-            return "Offline";
-        } catch (ResourceAccessException e) {
-            return "Offline";
-        } catch (Exception e) {
-            return "Offline";
+        return serialService.isConfigured() ? "Disconnected" : "Not configured";
+    }
+
+    /**
+     * Legacy polling route is retained for older firmware, but only reports
+     * confirmed state and fails closed while full or unknown.
+     */
+    public String getGateCommand(GateType gateType) {
+        if (gateType != GateType.ENTRANCE || !serialService.isGateStateConfirmed()) {
+            return "CLOSED";
         }
+        if (isParkingFull()) {
+            return "CLOSED";
+        }
+        return serialService.getGateState() == GateStatus.OPEN ? "OPEN" : "CLOSED";
+    }
+
+    public String getEntryGateCommand() {
+        return getGateCommand(GateType.ENTRANCE);
+    }
+
+    public String getExitGateCommand() {
+        return "CLOSED";
     }
 
     @Transactional
     public GateStatusResponse controlBarrier(GateType gateType, GateAction action) {
-        if (gateType == null) {
-            throw new InvalidGateException("Gate type must be specified (ENTRANCE or EXIT).");
+        if (gateType == null || action == null) {
+            throw new InvalidGateException("Gate type and action must be specified.");
         }
-        if (action == null) {
-            throw new InvalidGateException("Gate action must be specified (OPEN or CLOSE).");
+        if (gateType != GateType.ENTRANCE) {
+            throw new InvalidGateException(
+                    "This firmware has one shared gate and does not support separate remote exit commands.");
         }
-
-        GateType canonicalType = (gateType == GateType.ENTRY) ? GateType.ENTRANCE : gateType;
-        String targetGateName = (canonicalType == GateType.ENTRANCE) ? "entrance" : "exit";
-        String targetActionName = action.name().toLowerCase();
-
-        // 1. ESP32 communication logic (Hardware Control)
-        sendControlCommandToEsp32(targetGateName, targetActionName);
-
-        // 2. Update internal in-memory barrier state
-        GateStatus targetStatus = (action == GateAction.OPEN) ? GateStatus.OPEN : GateStatus.CLOSED;
-        if (canonicalType == GateType.ENTRANCE) {
-            entranceGateState = targetStatus;
-        } else if (canonicalType == GateType.EXIT) {
-            exitGateState = targetStatus;
+        if (action == GateAction.OPEN && isParkingFull()) {
+            throw new IllegalStateException("Entry is blocked because all four parking slots are occupied.");
+        }
+        if (action == GateAction.OPEN && !isParkingDataTrusted()) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "Entry cannot be opened until fresh readings for all four parking slots are available.");
         }
 
-        // 3. Persist gate status into database if repository is available
-        if (gateRepository != null) {
-            Gate gate = gateRepository.findByGateType(canonicalType)
-                    .orElseGet(() -> new Gate(
-                            (canonicalType == GateType.ENTRANCE) ? "Main Entrance Gate" : "Main Exit Gate",
-                            canonicalType,
-                            targetStatus
-                    ));
-            gate.setStatus(targetStatus);
-            gate.setUpdatedAt(LocalDateTime.now());
-            gateRepository.save(gate);
-        }
-
-        String actionPastTense = (action == GateAction.OPEN) ? "opened" : "closed";
-        String successMsg = String.format("%s barrier %s successfully!",
-                targetGateName.substring(0, 1).toUpperCase() + targetGateName.substring(1),
-                actionPastTense);
-
-        return new GateStatusResponse(
-                checkEsp32Health(),
-                entranceGateState.name(),
-                exitGateState.name(),
-                successMsg
-        );
+        serialService.requestCommand(gateType, action);
+        GateStatusResponse response = getGateStatus();
+        response.setMessage(action + " command accepted; physical status is pending ESP32 confirmation.");
+        return response;
     }
 
+    @Transactional
+    public GateStatusResponse recordGateStatus(GateType gateType, GateStatus status) {
+        if (gateType == null || status == null) {
+            throw new InvalidGateException("Gate type and state must be specified.");
+        }
+        if (gateType != GateType.ENTRANCE) {
+            throw new InvalidGateException("The connected firmware reports one shared physical gate.");
+        }
+
+        updateGateState(gateType, status);
+        return getGateStatus();
+    }
+
+    @Transactional
     public GateStatusResponse openEntranceBarrier() {
         return controlBarrier(GateType.ENTRANCE, GateAction.OPEN);
     }
 
+    @Transactional
     public GateStatusResponse closeEntranceBarrier() {
         return controlBarrier(GateType.ENTRANCE, GateAction.CLOSE);
     }
 
     public GateStatusResponse openExitBarrier() {
-        return controlBarrier(GateType.EXIT, GateAction.OPEN);
+        throw new InvalidGateException(
+                "The unchanged firmware has no separate remote exit command; the exit sensor operates the shared gate.");
     }
 
     public GateStatusResponse closeExitBarrier() {
-        return controlBarrier(GateType.EXIT, GateAction.CLOSE);
+        throw new InvalidGateException(
+                "The unchanged firmware has no separate remote exit command; the exit sensor operates the shared gate.");
     }
 
-    private void sendControlCommandToEsp32(String gate, String action) {
-        if (mockModeEnabled) {
-            // Mock ESP32 device simulation always succeeds
-            return;
-        }
+    public boolean isGateControlConfigured() {
+        return !gateControlToken.isBlank();
+    }
 
-        String url = String.format("%s/api/barrier/control?gate=%s&action=%s", esp32BaseUrl, gate, action);
-        try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(url, null, Map.class);
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new Esp32CommunicationException("ESP32 responded with non-success status code: " + response.getStatusCode());
-            }
-        } catch (ResourceAccessException e) {
-            throw new Esp32UnavailableException("ESP32 device is unreachable at " + esp32BaseUrl, e);
-        } catch (Exception e) {
-            if (e instanceof Esp32UnavailableException || e instanceof Esp32CommunicationException) {
-                throw e;
-            }
-            throw new Esp32CommunicationException("Failed to communicate with ESP32 device: " + e.getMessage(), e);
+    public boolean isGateControlTokenValid(String providedToken) {
+        if (providedToken == null || gateControlToken.isBlank()) {
+            return false;
+        }
+        return java.security.MessageDigest.isEqual(
+                gateControlToken.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                providedToken.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    public boolean isParkingFull() {
+        return slotRepository.findAllByOrderBySlotNumberAsc().stream()
+                .filter(slot -> slot.getSlotNumber() >= 1 && slot.getSlotNumber() <= 4)
+                .filter(slot -> slot.isOccupied())
+                .count() == 4;
+    }
+
+    private boolean isParkingDataTrusted() {
+        Instant lastBatch = occupancyService.getLastSuccessfulBatchAt();
+        if (lastBatch == null
+                || Duration.between(lastBatch, Instant.now()).getSeconds() > staleAfterSeconds) {
+            return false;
+        }
+        List<com.smartparking.backend.model.ParkingSlot> physicalSlots =
+                slotRepository.findAllByOrderBySlotNumberAsc().stream()
+                .filter(slot -> slot.getSlotNumber() >= 1 && slot.getSlotNumber() <= 4)
+                .toList();
+        return physicalSlots.size() == 4
+                && physicalSlots.stream().allMatch(slot -> slot.getLastSensorUpdate() != null
+                        && Duration.between(
+                                slot.getLastSensorUpdate().atZone(java.time.ZoneId.systemDefault()).toInstant(),
+                                Instant.now())
+                                .getSeconds() <= staleAfterSeconds);
+    }
+
+    private void syncReportedGateState() {
+        if (serialService.isGateStateConfirmed()) {
+            updateGateState(GateType.ENTRANCE, serialService.getGateState());
         }
     }
 
-    // Getters and Setters for state management testing
+    private void updateGateState(GateType gateType, GateStatus status) {
+        Optional<Gate> existing = gateRepository.findByGateType(gateType);
+        Gate gate = existing.orElseGet(() -> new Gate(
+                gateType == GateType.ENTRANCE ? "Main Entrance Gate" : "Main Exit Gate",
+                gateType,
+                status));
+        if (gate.getStatus() != status) {
+            gate.setStatus(status);
+            gate.setUpdatedAt(LocalDateTime.now());
+            gateRepository.save(gate);
+        }
+    }
+
     public GateStatus getEntranceGateState() {
-        return entranceGateState;
-    }
-
-    public void setEntranceGateState(GateStatus entranceGateState) {
-        this.entranceGateState = entranceGateState;
+        return serialService.getGateState();
     }
 
     public GateStatus getExitGateState() {
-        return exitGateState;
-    }
-
-    public void setExitGateState(GateStatus exitGateState) {
-        this.exitGateState = exitGateState;
+        return null;
     }
 
     public GateRepository getGateRepository() {

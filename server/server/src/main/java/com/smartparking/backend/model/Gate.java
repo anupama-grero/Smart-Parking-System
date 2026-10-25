@@ -4,8 +4,6 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -22,20 +20,14 @@ public class Gate {
     @Column(nullable = false, unique = true)
     private String gateName;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, unique = true)
-    private GateType gateType;
-
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private GateStatus status = GateStatus.CLOSED;
 
+    @Column(nullable = false)
+    private GateType gateType = GateType.ENTRANCE;
+
     @Column
     private LocalDateTime updatedAt;
-
-    // Required by JPA
-    public Gate() {
-    }
 
     public Gate(String gateName, GateType gateType, GateStatus status) {
         this.gateName = gateName;
@@ -44,10 +36,19 @@ public class Gate {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public Gate(Long id, String gateName, GateType gateType, GateStatus status, LocalDateTime updatedAt) {
+    // Required by JPA
+    public Gate() {
+    }
+
+    public Gate(String gateName, GateStatus status) {
+        this.gateName = gateName;
+        this.status = status;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public Gate(Long id, String gateName, GateStatus status, LocalDateTime updatedAt) {
         this.id = id;
         this.gateName = gateName;
-        this.gateType = gateType;
         this.status = status;
         this.updatedAt = updatedAt;
     }

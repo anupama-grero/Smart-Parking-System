@@ -301,6 +301,38 @@
         .status-open { background: rgba(37, 99, 235, 0.15); color: var(--primary-blue); border: 1px solid rgba(37, 99, 235, 0.3); }
         .status-closed { background: rgba(100, 116, 139, 0.15); color: var(--text-muted); border: 1px solid rgba(100, 116, 139, 0.3); }
 
+        /* Guard Slot Grid - Balanced 2x2 arrangement to eliminate overflow */
+        #guard-slot-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 14px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        #guard-slot-grid .status-pill {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 7px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+
+        @media (max-width: 340px) {
+            #guard-slot-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* Gate Switcher Tabs */
         .gate-switcher-container {
             margin-bottom: 24px;
@@ -673,6 +705,10 @@
             transition: opacity 0.3s ease, visibility 0.3s ease;
         }
 
+        .message-toast[hidden] {
+            display: none;
+        }
+
         .toast-show {
             opacity: 1;
             visibility: visible;
@@ -803,6 +839,30 @@
                         </span>
                         <span id="espStatus" class="status-pill status-offline">Checking...</span>
                     </div>
+
+                    <div class="status-row">
+                        <span class="status-label">
+                            <span id="rwPulse" class="pulse-dot pulse-green"></span>
+                            Slot 2 Reverse Warning:
+                        </span>
+                        <span id="rwStatus" class="status-pill status-online">INACTIVE</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Last ESP32 communication:</span>
+                        <span id="lastHardwareUpdate" class="status-pill status-offline">Not received</span>
+                    </div>
+                    <div id="guard-parking-full" class="message-toast toast-error toast-show" role="alert" hidden>
+                        PARKING FULL — entry requests are blocked.
+                    </div>
+                    <div id="guard-parking-data" class="message-toast toast-error toast-show" role="status">
+                        Waiting for occupancy telemetry…
+                    </div>
+                    <div id="guard-slot-grid" aria-label="Live parking slot status">
+                        <span id="guard-slot-1" class="status-pill status-offline">Slot 1: Unknown</span>
+                        <span id="guard-slot-2" class="status-pill status-offline">Slot 2: Unknown</span>
+                        <span id="guard-slot-3" class="status-pill status-offline">Slot 3: Unknown</span>
+                        <span id="guard-slot-4" class="status-pill status-offline">Slot 4: Unknown</span>
+                    </div>
                 </div>
 
                 <!-- Recent Activity Feed (Swapped to Left Column - Audit Log) -->
@@ -835,7 +895,7 @@
                             <span id="activeGateIcon">🚗</span>
                             <span id="activeGateTitle">Main Gate & Barrier</span>
                         </div>
-                        <span id="activeGateStatus" class="status-pill status-closed">CLOSED</span>
+                        <span id="activeGateStatus" class="status-pill status-offline">UNKNOWN</span>
                     </div>
 
                     <div class="barrier-graphic-large">
@@ -850,11 +910,20 @@
 
                 <!-- Single Gate Operation Actions -->
                 <div class="controls-card">
+                    <div id="gate-command-status" class="instructions-text" aria-live="polite">
+                        No confirmed gate command.
+                    </div>
+                    <label for="gateControlToken" style="display:block;margin-bottom:8px;color:var(--text-secondary);font-size:12px;">
+                        Guard control token (required; kept only in this page)
+                    </label>
+                    <input id="gateControlToken" type="password" autocomplete="off"
+                           placeholder="Enter configured gate-control token"
+                           style="width:100%;padding:10px 12px;margin-bottom:12px;border:1px solid var(--status-border);border-radius:10px;background:var(--card-bg);color:var(--text-primary);">
                     <div class="btn-grid">
-                        <button id="openActiveBtn" class="btn-action btn-primary" onclick="openActiveGate()">
+                        <button id="openActiveBtn" class="btn-action btn-primary" disabled onclick="openActiveGate()">
                             <span>🔓</span> Open Barrier
                         </button>
-                        <button id="closeActiveBtn" class="btn-action btn-secondary" onclick="closeActiveGate()">
+                        <button id="closeActiveBtn" class="btn-action btn-secondary" disabled onclick="closeActiveGate()">
                             <span>🔒</span> Close Barrier
                         </button>
                     </div>
@@ -878,6 +947,6 @@
         </main>
     </div>
 
-    <script src="/js/security-gate.js?v=4"></script>
+    <script src="/js/security-gate.js?v=5"></script>
 </body>
 </html>

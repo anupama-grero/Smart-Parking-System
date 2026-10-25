@@ -46,8 +46,8 @@ public class ParkingSessionIntegrationTest {
         sessionRepository.deleteAll();
         driverRepository.deleteAll();
 
-        // Ensure standard slots 1-8 exist and are available
-        for (int i = 1; i <= 8; i++) {
+        // Ensure the four physical slots exist and are available.
+        for (int i = 1; i <= 4; i++) {
             final int slotNum = i;
             ParkingSlot slot = slotRepository.findBySlotNumber(slotNum)
                     .orElseGet(() -> slotRepository.save(new ParkingSlot(slotNum, "Category " + slotNum, false)));
@@ -83,8 +83,8 @@ public class ParkingSessionIntegrationTest {
         // Verify slot status in database is occupied
         mockMvc.perform(get("/api/parking/status"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].slotId", is(1)))
-                .andExpect(jsonPath("$[0].isOccupied", is(true)));
+                .andExpect(jsonPath("$.slots[0].slotNumber", is(1)))
+                .andExpect(jsonPath("$.slots[0].occupied", is(true)));
     }
 
     // 2. Create session with invalid driver (missing driverId)
@@ -195,8 +195,8 @@ public class ParkingSessionIntegrationTest {
         // Verify slot is now AVAILABLE in real-time polling API
         mockMvc.perform(get("/api/parking/status"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].slotId", is(1)))
-                .andExpect(jsonPath("$[0].isOccupied", is(false)));
+                .andExpect(jsonPath("$.slots[0].slotNumber", is(1)))
+                .andExpect(jsonPath("$.slots[0].occupied", is(false)));
     }
 
     // 9. Attempt to complete session twice

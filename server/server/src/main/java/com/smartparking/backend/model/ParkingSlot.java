@@ -11,7 +11,6 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "parking_slots")
@@ -27,24 +26,30 @@ public class ParkingSlot {
     private Integer slotNumber;
 
     @NotBlank
-    @Size(max = 80)
-    @Column(nullable = false, length = 80)
+    @Column(nullable = false)
     private String category;
 
     @Column(nullable = false)
     private boolean isOccupied = false;
 
-    @Column
+    @Column(name = "last_distance_cm")
     private Double lastDistanceCm;
 
-    @Column
+    @Column(name = "last_sensor_update")
     private LocalDateTime lastSensorUpdate;
+
+    @Column(name = "reverse_warning")
+    private boolean reverseWarning = false;
 
     // Required by JPA
     public ParkingSlot() {
     }
 
     // Used when creating a new parking slot
+    public ParkingSlot(Integer slotNumber, boolean isOccupied) {
+        this(slotNumber, "General", isOccupied);
+    }
+
     public ParkingSlot(Integer slotNumber, String category, boolean isOccupied) {
         this.slotNumber = slotNumber;
         this.category = category;
@@ -52,6 +57,10 @@ public class ParkingSlot {
     }
 
     // Used in unit tests and manual initialization
+    public ParkingSlot(Long id, Integer slotNumber, boolean isOccupied) {
+        this(id, slotNumber, "General", isOccupied);
+    }
+
     public ParkingSlot(Long id, Integer slotNumber, String category, boolean isOccupied) {
         this.id = id;
         this.slotNumber = slotNumber;
@@ -105,5 +114,13 @@ public class ParkingSlot {
 
     public void setLastSensorUpdate(LocalDateTime lastSensorUpdate) {
         this.lastSensorUpdate = lastSensorUpdate;
+    }
+
+    public boolean isReverseWarning() {
+        return reverseWarning;
+    }
+
+    public void setReverseWarning(boolean reverseWarning) {
+        this.reverseWarning = reverseWarning;
     }
 }

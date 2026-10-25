@@ -2,6 +2,8 @@ package com.smartparking.backend.exception;
 
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,8 @@ import com.smartparking.backend.dto.ApiResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Object>> handleResourceNotFound(ResourceNotFoundException ex) {
@@ -31,6 +35,7 @@ public class GlobalExceptionHandler {
         if (message.isBlank()) {
             message = "Validation failed";
         }
+        log.warn("Rejected request validation: {}", message);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error("Invalid request: " + message));
@@ -38,6 +43,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Object>> handleMalformedJson(HttpMessageNotReadableException ex) {
+        log.warn("Rejected request with malformed or unreadable JSON: {}", ex.getMessage());
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error("Invalid request: malformed JSON"));
@@ -45,6 +51,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ApiResponse<Object>> handleDataAccess(DataAccessException ex) {
+        log.error("Database operation failed while processing an API request", ex);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Database error while processing the request"));
@@ -80,6 +87,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({InvalidGateException.class, IllegalArgumentException.class})
     public ResponseEntity<ApiResponse<Object>> handleInvalidRequest(RuntimeException ex) {
+        log.warn("Rejected invalid API request: {}", ex.getMessage());
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error("Invalid request: " + ex.getMessage()));
@@ -87,6 +95,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGenericException(Exception ex) {
+        log.error("Unexpected API request failure", ex);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Internal server error: " + ex.getMessage()));

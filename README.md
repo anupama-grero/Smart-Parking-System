@@ -52,6 +52,17 @@ The system implements 8 core integrated modules (Issues #1–#8):
 * **Styling:** Vanilla CSS3 (Custom CSS Tokens, Dark/Light Mode), Bootstrap 5 CDN
 * **Logic:** Modern JavaScript (ES6+ `fetch` API, DOM manipulation)
 
+### Security Guard Login
+
+The security dashboard and admin dashboard require a security guard account. The default username is `guard`; choose a password and set it before starting the backend. The account is disabled when no password is configured.
+
+```bash
+cd server/server
+SECURITY_GUARD_USERNAME=guard SECURITY_GUARD_PASSWORD='choose-a-private-password' ./mvnw spring-boot:run
+```
+
+Replace `choose-a-private-password` with your own password. Keep it private and do not commit it to the repository. Then open `http://localhost:8080/login` and sign in with username `guard` and the password you chose. You can set a different username with `SECURITY_GUARD_USERNAME`. The driver dashboard at `/driver` remains publicly viewable. Use HTTPS and a strong, unique password when deploying beyond a local demonstration.
+
 ### Embedded / IoT Hardware
 * **Microcontroller:** ESP32 DevKit V1
 * **Sensors:** HC-SR04 Ultrasonic Distance Sensors (Range: 2–400 cm)
@@ -220,9 +231,11 @@ Queues existing `OPEN`/`CLOSE` serial commands and confirms them only when the f
 - Embedded JavaScript poller fetching live updates every 3 seconds from `GET /api/parking/status`.
 
 ### Security Guard Dashboard (`GET /security-guard`)
+- Requires a security guard login at `/login`; credentials are configured with `SECURITY_GUARD_USERNAME` and `SECURITY_GUARD_PASSWORD`.
 - Guard override control station featuring single-gate visualizers, state badges, signal lights, and vehicle animation loop.
 - Live status poller fetching barrier states from `GET /api/gates/status` every 3 seconds.
-- Manual trigger buttons to open/close barriers asynchronously using [security-gate.js](./server/server/src/main/resources/static/js/security-gate.js).
+- Authenticated manual trigger buttons to open/close barriers asynchronously using [security-gate.js](./server/server/src/main/resources/static/js/security-gate.js).
+- Includes a driver-view link and sign-out action. The driver dashboard remains public.
 
 ---
 
@@ -418,7 +431,8 @@ credentials and the gate-control token outside source control.
 
 Once started, access the dashboards in your browser:
 * **Driver Dashboard:** `http://localhost:8080/driver`
-* **Security Guard Dashboard:** `http://localhost:8080/security-guard`
+* **Security Guard Login:** `http://localhost:8080/login`
+* **Security Guard Dashboard:** `http://localhost:8080/security-guard` (requires login)
 * **H2 Database Console:** `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:smartparkingdb`)
 
 ---

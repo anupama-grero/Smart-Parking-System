@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b1329">
+    <title>Security staff login | Smart Parking</title>
+    <style>
+        :root {
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+            color: #172033;
+            background: #edf2f8;
+            font-synthesis: none;
+            text-rendering: optimizeLegibility;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            display: grid;
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px;
+            place-items: center;
+            background:
+                radial-gradient(ellipse at 16% 12%, rgba(59, 130, 246, .12), transparent 34%),
+                radial-gradient(ellipse at 90% 88%, rgba(14, 165, 233, .1), transparent 32%),
+                #edf2f8;
+        }
+
+        .login-card {
+            width: min(100%, 440px);
+            padding: clamp(26px, 7vw, 42px);
+            border: 1px solid #dce4ef;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, .97);
+            box-shadow: 0 28px 80px rgba(15, 23, 42, .12);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            margin-bottom: 34px;
+        }
+
+        .brand-icon {
+            display: grid;
+            width: 48px;
+            height: 48px;
+            flex: 0 0 auto;
+            place-items: center;
+            border: 1px solid #dbeafe;
+            border-radius: 15px;
+            background: #eff6ff;
+            font-size: 24px;
+        }
+
+        .brand strong,
+        .brand small {
+            display: block;
+        }
+
+        .brand strong {
+            font-size: 15px;
+            letter-spacing: -.02em;
+        }
+
+        .brand small {
+            margin-top: 5px;
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .14em;
+        }
+
+        .eyebrow {
+            margin: 0 0 9px;
+            color: #2563eb;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            color: #111827;
+            font-size: clamp(25px, 6vw, 30px);
+            letter-spacing: -.045em;
+        }
+
+        .intro {
+            margin: 10px 0 26px;
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        label {
+            display: block;
+            margin: 17px 0 8px;
+            color: #263449;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        input {
+            width: 100%;
+            min-height: 48px;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            padding: 0 13px;
+            color: #0f172a;
+            background: #fff;
+            font: inherit;
+            font-size: 14px;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+
+        input::placeholder {
+            color: #94a3b8;
+        }
+
+        input:focus {
+            border-color: #3b82f6;
+            outline: 0;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, .15);
+        }
+
+        .password-field {
+            position: relative;
+        }
+
+        .password-field input {
+            padding-right: 76px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 11px;
+            transform: translateY(-50%);
+            border: 0;
+            padding: 7px 4px;
+            color: #2563eb;
+            background: transparent;
+            cursor: pointer;
+            font: inherit;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .password-toggle:focus-visible,
+        .sign-in:focus-visible,
+        .driver-link:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, .45);
+            outline-offset: 3px;
+        }
+
+        .sign-in {
+            width: 100%;
+            min-height: 49px;
+            margin-top: 24px;
+            border: 0;
+            border-radius: 9px;
+            color: #fff;
+            background: #1d4ed8;
+            box-shadow: 0 8px 18px rgba(29, 78, 216, .2);
+            cursor: pointer;
+            font: inherit;
+            font-size: 14px;
+            font-weight: 750;
+            transition: background .15s ease, transform .15s ease;
+        }
+
+        .sign-in:hover {
+            transform: translateY(-1px);
+            background: #1e40af;
+        }
+
+        .sign-in:active {
+            transform: translateY(0);
+        }
+
+        .notice {
+            margin: 18px 0 0;
+            border: 1px solid #fecaca;
+            border-radius: 9px;
+            padding: 12px 13px;
+            color: #991b1b;
+            background: #fef2f2;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .notice.success {
+            border-color: #bbf7d0;
+            color: #166534;
+            background: #f0fdf4;
+        }
+
+        .driver-link {
+            display: block;
+            margin-top: 24px;
+            color: #2563eb;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .driver-link:hover {
+            text-decoration: underline;
+        }
+
+        .access-note {
+            margin: 23px 0 0;
+            color: #94a3b8;
+            font-size: 11px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                transition-duration: .01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+<main class="login-card">
+    <div class="brand">
+        <span class="brand-icon" aria-hidden="true">🚗</span>
+        <span><strong>Smart Parking Station</strong><small>SECURITY STAFF</small></span>
+    </div>
+    <p class="eyebrow">Staff access</p>
+    <h1>Welcome back</h1>
+    <p class="intro">Sign in with your security staff account to manage the security dashboard.</p>
+
+    <form th:action="@{/login}" method="post">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" autocomplete="username"
+               placeholder="Enter your username" required autofocus>
+
+        <label for="password">Password</label>
+        <div class="password-field">
+            <input id="password" name="password" type="password" autocomplete="current-password"
+                   placeholder="Enter your password" required>
+            <button class="password-toggle" type="button" aria-controls="password"
+                    aria-label="Show password" aria-pressed="false">Show</button>
+        </div>
+
+        <button class="sign-in" type="submit">Sign in</button>
+    </form>
+
+    <p class="notice" th:if="${param.error}" role="alert">
+        The username or password was not accepted. Please try again.
+    </p>
+    <p class="notice success" th:if="${param.logout}" role="status">
+        You have been signed out.
+    </p>
+
+    <a class="driver-link" th:href="@{/driver}">View driver parking information</a>
+    <p class="access-note">Authorized security staff only. Your session is protected.</p>
+</main>
+<script>
+    const passwordInput = document.getElementById('password');
+    const passwordToggle = document.querySelector('.password-toggle');
+
+    passwordToggle.addEventListener('click', () => {
+        const isVisible = passwordInput.type === 'text';
+        passwordInput.type = isVisible ? 'password' : 'text';
+        passwordToggle.textContent = isVisible ? 'Show' : 'Hide';
+        passwordToggle.setAttribute('aria-label', isVisible ? 'Show password' : 'Hide password');
+        passwordToggle.setAttribute('aria-pressed', String(!isVisible));
+    });
+</script>
+</body>
+</html>

@@ -69,7 +69,7 @@ public class BarrierService {
         response.setCommandMessage(serialService.getCommandMessage());
         Instant lastUpdate = serialService.getLastCommunicationAt();
         response.setLastHardwareUpdate(lastUpdate == null ? null : lastUpdate.toString());
-        response.setGateControlEnabled(serialService.isConnected() && !gateControlToken.isBlank());
+        response.setGateControlEnabled(serialService.isConnected());
         response.setEntryOpenAllowed(
                 response.isGateControlEnabled() && !isParkingFull() && isParkingDataTrusted());
         return response;

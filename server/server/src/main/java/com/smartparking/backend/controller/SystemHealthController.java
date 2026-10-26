@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.smartparking.backend.service.Esp32SerialService;
+import com.smartparking.backend.service.Esp32WifiService;
 import com.smartparking.backend.service.SensorOccupancyService;
 
 @RestController
@@ -24,17 +24,17 @@ public class SystemHealthController {
     private static final Logger log = LoggerFactory.getLogger(SystemHealthController.class);
 
     private final DataSource dataSource;
-    private final Esp32SerialService serialService;
+    private final Esp32WifiService esp32Service;
     private final SensorOccupancyService occupancyService;
     private final int staleAfterSeconds;
 
     public SystemHealthController(
             DataSource dataSource,
-            Esp32SerialService serialService,
+            Esp32WifiService esp32Service,
             SensorOccupancyService occupancyService,
             @Value("${parking.sensor.stale-after-seconds:10}") int staleAfterSeconds) {
         this.dataSource = dataSource;
-        this.serialService = serialService;
+        this.esp32Service = esp32Service;
         this.occupancyService = occupancyService;
         this.staleAfterSeconds = staleAfterSeconds;
     }
@@ -49,7 +49,8 @@ public class SystemHealthController {
         result.put("backend", "UP");
         result.put("database", databaseConnected ? "UP" : "DOWN");
         result.put("esp32Telemetry", telemetryConnected ? "CONNECTED" : "STALE_OR_DISCONNECTED");
-        result.put("usbSerial", serialService.isConnected() ? "CONNECTED" : "DISCONNECTED");
+        result.put("esp32GateControl", esp32Service.isConnected() ? "CONNECTED"
+                : esp32Service.isConfigured() ? "DISCONNECTED" : "NOT_CONFIGURED");
         result.put("lastSuccessfulSensorUpdate", lastUpdate);
         result.put("checkedAt", Instant.now());
 

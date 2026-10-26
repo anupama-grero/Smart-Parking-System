@@ -34,7 +34,7 @@ The system implements 8 core integrated modules (Issues #1–#8):
 - **Custom CSS Enhancements (Issue #4):** Custom theme styling system ([dashboard.css](./server/server/src/main/resources/static/css/dashboard.css)) supporting dark/light mode tokens, smooth transitions, status pills, and responsive grid layouts.
 - **Parking & Slot Management API (Issue #5):** Full RESTful CRUD endpoints for parking slot configuration, manual occupancy updates, and status monitoring backed by H2/MySQL database persistence.
 - **Real-Time Occupancy & ESP32 Sensor Integration (Issue #6):** Ingestion of telemetry from HC-SR04 ultrasonic distance sensors with firmware-aligned occupancy (5 cm) and reverse-warning (3 cm) thresholds plus active session state protection.
-- **Security Guard Gate & Barrier API (Issue #7):** Token-protected gate requests sent over the firmware-supported USB serial commands, with explicit pending/confirmed/failed results.
+- **Security Guard Gate & Barrier API (Issue #7):** Token-protected gate requests sent over Wi-Fi to the ESP32, with explicit pending/confirmed/failed results.
 - **Driver & Parking Session Management (Issue #8):** Complete driver registration, entry session creation, active session tracking, and exit session completion with slot release logic.
 
 ---
@@ -219,7 +219,7 @@ Handles vehicle arrival and departure lifecycle. Validates driver credentials, a
 Processes distance telemetry sent from ESP32 HC-SR04 ultrasonic sensors. Calculates physical slot occupancy against a 5 cm threshold and activates the Slot 2 reverse warning at 3 cm, while preventing active sessions from being accidentally cleared by sensor noise.
 
 ### 4. Gate & Barrier Override Control (`BarrierController`, `BarrierService`)
-Queues existing `OPEN`/`CLOSE` serial commands and confirms them only when the firmware reports a matching gate state. No simulated success is returned when hardware is unavailable.
+Sends authenticated `OPEN`/`CLOSE` requests to the ESP32 over Wi-Fi and confirms them only after polling the firmware's reported gate state. No simulated success is returned when hardware is unavailable.
 
 ---
 
@@ -255,12 +255,20 @@ Queues existing `OPEN`/`CLOSE` serial commands and confirms them only when the f
 * **Communication Protocol:** HTTP POST JSON batches to `/api/sensors/occupancy/batch`.
 
 ### ESP32 Gate Control Protocol
-The active four-slot firmware does not poll HTTP for gate commands. The backend sends only its supported `OPEN`, `CLOSE`, and `STATUS` serial commands at 115200 baud. Gate status remains UNKNOWN until the firmware reports it; a command starts as PENDING and is never represented as a physical success merely because HTTP succeeded.
+The active four-slot firmware exposes `GET /api/gate/status` and authenticated `POST /api/gate/open` and `/api/gate/close` routes over Wi-Fi. Set `ESP32_WIFI_BASE_URL` to the ESP32's stable LAN address (for example, `http://192.168.1.50`) and set `ESP32_GATE_CONTROL_TOKEN` to the same value configured in the firmware. The backend polls the reported gate state; a command remains PENDING until the ESP32 reports the requested physical state.
 
-### USB Serial Cable Sketch Gate Sync
-Run `start-system.bat` from the repository root. The selected unchanged firmware has a fixed `SERVER_URL` of `http://192.168.29.59:8080`; this workstation must be reachable at that address (for example, using a DHCP reservation/static IP or an existing network route). This environment currently does not own that IP, so ESP32 Wi-Fi telemetry cannot reach the backend until the network is arranged accordingly. Do not edit the firmware. Its four-slot occupancy batches are sent every second once the fixed address is reachable.
+### Wi-Fi ESP32 Gate Sync
+Run `start-system.bat` from the repository root. Configure the firmware's `SERVER_URL` with the backend computer's LAN address and port `8080` so its sensor batches can reach Spring Boot. Configure `ESP32_WIFI_BASE_URL` with the ESP32's LAN address so the backend can poll and control its gate. Both devices must be on a network that allows traffic between them; reserve stable addresses for both devices or configure DHCP reservations. The firmware sends four-slot occupancy batches over Wi-Fi every second.
 
-Connect the ESP32 to the backend computer using its USB serial adapter, then set `ESP32_SERIAL_PORT` (for example, `COM3`) and restart the backend. The baud rate is `115200`. Set `ESP32_GATE_CONTROL_TOKEN` in the backend environment and enter that token in the guard dashboard. Gate commands remain disabled if either the serial adapter or token is unavailable.
+Set `ESP32_WIFI_BASE_URL` and `ESP32_GATE_CONTROL_TOKEN` in the backend process environment before starting the application. Enter the same gate-control token in the security guard dashboard. Gate status and occupancy telemetry use Wi-Fi; a USB serial connection is not required. Gate controls remain disabled until the configured ESP32 responds and the token is set.
+
+For example, in PowerShell, set the values for the current terminal before running `start-system.bat`:
+
+```powershell
+$env:ESP32_WIFI_BASE_URL = "http://<ESP32-LAN-IP>"
+$env:ESP32_GATE_CONTROL_TOKEN = "<same-token-as-firmware>"
+.\start-system.bat
+```
 
 The firmware controls one shared servo/gate. Its exit sensor can open that gate even when parking is full; the backend does not provide a separate manual exit command because the firmware protocol cannot target an exit gate independently. Entry OPEN commands are blocked by the backend when full or when any slot lacks fresh readings, and the unchanged firmware remains the final full-capacity authority. The server never sends gate commands as a side effect of dashboard polling.
 
@@ -310,11 +318,11 @@ includes `slots`, `occupiedSlots`, `availableSlots`, `unknownSlots`, `full`,
 | Method | Endpoint | Description | Status Code |
 |---|---|---|---|
 | `GET` | `/api/gates/status` | Fetches Barrier state and ESP32 health | `200 OK` |
-| `POST` | `/api/gates/entry/status?state=OPEN` | Compatibility endpoint for manually reported entrance state; active ESP32 state arrives over USB serial | `200 OK` |
-| `POST` | `/api/gates/entry/open` | Requests serial OPEN; requires `X-Gate-Control-Token` | `200 PENDING`, `409` full, `502` disconnected |
-| `POST` | `/api/gates/entry/close` | Requests serial CLOSE; requires `X-Gate-Control-Token` | `200 PENDING`, `502` disconnected |
+| `POST` | `/api/gates/entry/status?state=OPEN` | Compatibility endpoint for manually reported entrance state; active ESP32 state is polled over Wi-Fi | `200 OK` |
+| `POST` | `/api/gates/entry/open` | Requests Wi-Fi OPEN; requires `X-Gate-Control-Token` | `200 PENDING`, `409` full, `502` disconnected |
+| `POST` | `/api/gates/entry/close` | Requests Wi-Fi CLOSE; requires `X-Gate-Control-Token` | `200 PENDING`, `502` disconnected |
 | `POST` | `/api/gates/exit/open` | Not supported as a separate remote action by this firmware | `400 Bad Request` |
-| `GET` | `/api/system/health` | Backend, database, Wi-Fi telemetry and USB serial health | `200` / `503` |
+| `GET` | `/api/system/health` | Backend, database, Wi-Fi telemetry and Wi-Fi gate-control health | `200` / `503` |
 
 Example entry OPEN request:
 
@@ -396,11 +404,11 @@ spring.datasource.password=
 spring.h2.console.enabled=true
 spring.jpa.hibernate.ddl-auto=update
 
-# USB serial gate-control settings are supplied through the backend process environment:
-# ESP32_SERIAL_PORT=COM3
-# ESP32_SERIAL_BAUD_RATE=115200
-# ESP32_SERIAL_COMMAND_TIMEOUT_MS=3000
-# ESP32_SERIAL_CONNECTION_TIMEOUT_MS=10000
+# Wi-Fi gate-control settings are supplied through the backend process environment:
+# ESP32_WIFI_BASE_URL=http://<ESP32-LAN-IP>
+# ESP32_WIFI_POLL_INTERVAL_MS=1000
+# ESP32_WIFI_COMMAND_TIMEOUT_MS=5000
+# ESP32_WIFI_CONNECTION_TIMEOUT_MS=2000
 # ESP32_GATE_CONTROL_TOKEN=<use-a-long-random-secret>
 
 # Parking Sensor Telemetry Settings
@@ -449,7 +457,7 @@ The backend suite covers controller, service, database, sensor-batch, and discon
 **Covered behavior:**
 - `BackendApplicationTests`: Spring application context loading
 - `BarrierControllerTest`: Barrier REST controller mappings and 502/400 exception mappings
-- `BarrierServiceTest`: Pending serial commands, full/stale-data restrictions, and hardware disconnection
+- `BarrierServiceTest`: Pending Wi-Fi commands, full/stale-data restrictions, and hardware disconnection
 - `ParkingSessionIntegrationTest`: Driver entry/exit workflows, slot reservation, and session history
 - `SensorOccupancyIntegrationTest`, `SensorOccupancyControllerTest`, `SensorOccupancyServiceTest`: Four-slot telemetry, 5 cm threshold, no-echo preservation, full-to-available transition, and duplicate rejection
 

@@ -26,7 +26,7 @@ public class BarrierService {
 
     private final GateRepository gateRepository;
     private final ParkingSlotRepository slotRepository;
-    private final Esp32SerialService serialService;
+    private final Esp32WifiService esp32Service;
     private final SensorOccupancyService occupancyService;
     private final String gateControlToken;
     private final int staleAfterSeconds;
@@ -34,13 +34,13 @@ public class BarrierService {
     public BarrierService(
             GateRepository gateRepository,
             ParkingSlotRepository slotRepository,
-            Esp32SerialService serialService,
+            Esp32WifiService esp32Service,
             SensorOccupancyService occupancyService,
             @Value("${esp32.gate-control-token:}") String gateControlToken,
             @Value("${parking.sensor.stale-after-seconds:10}") int staleAfterSeconds) {
         this.gateRepository = gateRepository;
         this.slotRepository = slotRepository;
-        this.serialService = serialService;
+        this.esp32Service = esp32Service;
         this.occupancyService = occupancyService;
         this.gateControlToken = gateControlToken;
         this.staleAfterSeconds = staleAfterSeconds;
@@ -48,38 +48,38 @@ public class BarrierService {
 
     public GateStatusResponse getGateStatus() {
         syncReportedGateState();
-        String entryStatus = serialService.getGateState() == null
+        String entryStatus = esp32Service.getGateState() == null
                 ? "UNKNOWN"
-                : serialService.getGateState().name();
-        String espStatus = serialService.isConnected()
+                : esp32Service.getGateState().name();
+        String espStatus = esp32Service.isConnected()
                 ? "Connected"
-                : serialService.isConfigured() ? "Disconnected" : "Not configured";
+                : esp32Service.isConfigured() ? "Disconnected" : "Not configured";
 
         GateStatusResponse response = new GateStatusResponse(
                 espStatus,
                 entryStatus,
                 "UNSUPPORTED",
                 "Firmware exposes one shared gate; exit movement remains sensor-controlled.");
-        response.setHardwareConnected(serialService.isConnected());
-        response.setGateStateConfirmed(serialService.isGateStateConfirmed());
-        response.setCommandState(serialService.getCommandState());
-        response.setRequestedGateState(serialService.getRequestedState() == null
+        response.setHardwareConnected(esp32Service.isConnected());
+        response.setGateStateConfirmed(esp32Service.isGateStateConfirmed());
+        response.setCommandState(esp32Service.getCommandState());
+        response.setRequestedGateState(esp32Service.getRequestedState() == null
                 ? null
-                : serialService.getRequestedState().name());
-        response.setCommandMessage(serialService.getCommandMessage());
-        Instant lastUpdate = serialService.getLastCommunicationAt();
+                : esp32Service.getRequestedState().name());
+        response.setCommandMessage(esp32Service.getCommandMessage());
+        Instant lastUpdate = esp32Service.getLastCommunicationAt();
         response.setLastHardwareUpdate(lastUpdate == null ? null : lastUpdate.toString());
-        response.setGateControlEnabled(serialService.isConnected());
+        response.setGateControlEnabled(esp32Service.isConnected() && esp32Service.isControlConfigured());
         response.setEntryOpenAllowed(
                 response.isGateControlEnabled() && !isParkingFull() && isParkingDataTrusted());
         return response;
     }
 
     public String checkEsp32Health() {
-        if (serialService.isConnected()) {
+        if (esp32Service.isConnected()) {
             return "Connected";
         }
-        return serialService.isConfigured() ? "Disconnected" : "Not configured";
+        return esp32Service.isConfigured() ? "Disconnected" : "Not configured";
     }
 
     /**
@@ -87,13 +87,13 @@ public class BarrierService {
      * confirmed state and fails closed while full or unknown.
      */
     public String getGateCommand(GateType gateType) {
-        if (gateType != GateType.ENTRANCE || !serialService.isGateStateConfirmed()) {
+        if (gateType != GateType.ENTRANCE || !esp32Service.isGateStateConfirmed()) {
             return "CLOSED";
         }
         if (isParkingFull()) {
             return "CLOSED";
         }
-        return serialService.getGateState() == GateStatus.OPEN ? "OPEN" : "CLOSED";
+        return esp32Service.getGateState() == GateStatus.OPEN ? "OPEN" : "CLOSED";
     }
 
     public String getEntryGateCommand() {
@@ -122,7 +122,7 @@ public class BarrierService {
                     "Entry cannot be opened until fresh readings for all four parking slots are available.");
         }
 
-        serialService.requestCommand(gateType, action);
+        esp32Service.requestCommand(gateType, action);
         GateStatusResponse response = getGateStatus();
         response.setMessage(action + " command accepted; physical status is pending ESP32 confirmation.");
         return response;
@@ -200,8 +200,8 @@ public class BarrierService {
     }
 
     private void syncReportedGateState() {
-        if (serialService.isGateStateConfirmed()) {
-            updateGateState(GateType.ENTRANCE, serialService.getGateState());
+        if (esp32Service.isGateStateConfirmed()) {
+            updateGateState(GateType.ENTRANCE, esp32Service.getGateState());
         }
     }
 
@@ -219,7 +219,7 @@ public class BarrierService {
     }
 
     public GateStatus getEntranceGateState() {
-        return serialService.getGateState();
+        return esp32Service.getGateState();
     }
 
     public GateStatus getExitGateState() {

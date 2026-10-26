@@ -93,8 +93,7 @@ public class BarrierController {
 
     /**
      * Legacy HTTP command-polling endpoints retained for older clients. The
-     * active four-slot firmware uses USB serial commands and does not poll
-     * these routes.
+     * active firmware reports gate state directly to the backend over Wi-Fi.
      *
      * The firmware calls these every BACKEND_INTERVAL seconds and opens its
      * servo whenever the response body contains the word {@code OPEN}.

@@ -112,6 +112,6 @@ class DashboardIntegrationTest {
                 .andExpect(jsonPath("$.backend", is("UP")))
                 .andExpect(jsonPath("$.database", is("UP")))
                 .andExpect(jsonPath("$.esp32Telemetry").exists())
-                .andExpect(jsonPath("$.usbSerial").exists());
+                .andExpect(jsonPath("$.esp32GateControl").exists());
     }
 }

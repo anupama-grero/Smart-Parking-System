@@ -30,7 +30,7 @@ public class SensorOccupancyController {
     }
 
     /**
-     * Single HC-SR04 reading, used by the serial bridge and manual testing.
+     * Single HC-SR04 reading, used for manual testing and direct integrations.
      *
      * POST /api/sensors/occupancy
      * Body: {"slotId": 1, "distance": 12.5}

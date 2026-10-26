@@ -29,7 +29,7 @@ import com.smartparking.backend.repository.ParkingSlotRepository;
 @SpringBootTest
 @TestPropertySource(properties = {
         "esp32.gate-control-token=test-token",
-        "esp32.serial.port="
+        "esp32.wifi.base-url="
 })
 class GateIntegrationTest {
 

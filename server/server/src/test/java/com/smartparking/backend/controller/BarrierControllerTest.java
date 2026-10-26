@@ -40,7 +40,7 @@ class BarrierControllerTest {
     }
 
     @Test
-    void statusReportsSerialAndConfirmationState() throws Exception {
+    void statusReportsWifiConnectionAndConfirmationState() throws Exception {
         GateStatusResponse response = new GateStatusResponse(
                 "Disconnected", "UNKNOWN", "UNSUPPORTED", "No hardware status");
         response.setHardwareConnected(false);
@@ -89,12 +89,12 @@ class BarrierControllerTest {
     @Test
     void disconnectedEsp32IsReportedAsGatewayFailure() throws Exception {
         when(barrierService.closeEntranceBarrier())
-                .thenThrow(new Esp32UnavailableException("serial disconnected"));
+                .thenThrow(new Esp32UnavailableException("ESP32 disconnected from Wi-Fi"));
 
         mockMvc.perform(post("/api/gates/entry/close")
                         .header("X-Gate-Control-Token", TOKEN))
                 .andExpect(status().isBadGateway())
-                .andExpect(jsonPath("$.message").value(containsString("serial disconnected")));
+                .andExpect(jsonPath("$.message").value(containsString("disconnected from Wi-Fi")));
     }
 
     @Test

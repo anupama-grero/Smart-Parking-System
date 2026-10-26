@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Smart Parking - Driver Dashboard</title>
+
+    <!-- Bootstrap 5 -->
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet">
+
+    <!-- Modern Google Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Team Custom Stylesheet -->
+    <link rel="stylesheet"
+            th:href="@{/css/dashboard.css(v=2)}">
+
+</head>
+
+<body>
+
+<!-- =========================================================
+      DRIVER DASHBOARD
+      ========================================================= -->
+
+<div id="driver-dashboard"
+     class="driver-dashboard">
+
+    <!-- =====================================================
+         HEADER
+         ===================================================== -->
+
+    <header class="dashboard-header">
+
+        <div class="container">
+
+            <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+
+                <div>
+                    <h1 class="dashboard-title">
+                        <span class="title-icon">🚗</span>
+                        Smart Parking
+                    </h1>
+
+                    <p class="dashboard-subtitle">
+                        Campus Driver Parking Dashboard
+                    </p>
+                </div>
+
+                <div class="dashboard-toolbar" aria-live="polite">
+                    <button id="themeToggleBtn" class="theme-toggle-btn" title="Toggle Theme" aria-label="Toggle Theme">
+                        <span class="theme-icon">🌙</span>
+                    </button>
+                    <span class="live-indicator">
+                        <span class="live-dot"></span>
+                        Live feed
+                    </span>
+                    <span id="last-updated" class="last-updated">
+                        Checking status…
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <!-- =====================================================
+         MAIN CONTENT
+         ===================================================== -->
+
+    <main class="container py-4">
+
+
+        <!-- =================================================
+              PARKING SUMMARY
+              ================================================= -->
+
+        <section id="parking-summary"
+                 class="mb-5">
+
+            <!-- =================================================
+                  REVERSE WARNING BANNER
+                  ================================================= -->
+            <div id="reverse-warning-banner"
+                 class="reverse-warning-banner"
+                 role="alert"
+                 aria-live="polite">
+                <div class="rw-icon">⚠️</div>
+                <div class="rw-text">
+                    <span class="rw-title">Reverse Parking Warning</span>
+                    <span class="rw-subtitle">Object detected behind Slot 2 — reverse with caution</span>
+                </div>
+                <span id="rw-state" class="rw-state rw-inactive">INACTIVE</span>
+            </div>
+            <div id="parking-full-banner" class="alert alert-danger mt-3 mb-0" role="alert" hidden>
+                <strong>PARKING FULL</strong> — all four parking slots are occupied.
+            </div>
+            <div id="parking-data-alert" class="alert alert-warning mt-3 mb-0" role="status" aria-live="polite">
+                Waiting for the first valid ESP32 update…
+            </div>
+
+            <div class="row g-4 mt-1">
+
+                <!-- Available Slots -->
+
+                <div class="col-md-6">
+
+                    <div id="available-card"
+                         class="dashboard-card card h-100">
+
+                        <div class="card-body text-center">
+
+                            <div class="card-icon">
+                                <span class="icon-glyph">🅿️</span>
+                            </div>
+
+                            <h2 class="card-title">
+                                Available
+                            </h2>
+
+                            <div id="available-count"
+                                 class="display-4 fw-bold">
+                                <span class="count-number">0</span>
+                            </div>
+
+                            <span id="available-status"
+                                  class="status-badge status-available badge">
+                                Spots Open
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Occupied Slots -->
+
+                <div class="col-md-6">
+
+                    <div id="occupied-card"
+                         class="dashboard-card card h-100">
+
+                        <div class="card-body text-center">
+
+                            <div class="card-icon">
+                                <span class="icon-glyph">🚙</span>
+                            </div>
+
+                            <h2 class="card-title">
+                                Occupied
+                            </h2>
+
+                            <div id="occupied-count"
+                                 class="display-4 fw-bold">
+                                <span class="count-number">0</span>
+                            </div>
+
+                            <span id="occupied-status"
+                                  class="status-badge status-occupied badge">
+                                Spots Taken
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- Progress Bar Card (Full Width) -->
+
+                <div class="col-md-12">
+
+                    <div id="capacity-card"
+                         class="dashboard-card card h-100">
+
+                        <div class="card-body text-center">
+
+                            <h2 class="card-title">
+                                Parking Capacity
+                            </h2>
+
+                            <div class="progress-wrapper">
+                                <div class="capacity-bar">
+                                    <div id="capacity-fill" class="capacity-fill">
+                                        <span id="capacity-text" class="capacity-text">0%</span>
+                                    </div>
+                                </div>
+                                <p id="capacity-message" class="capacity-message">
+                                    Checking…
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+              PARKING SLOT SECTION
+              ================================================= -->
+
+        <section id="parking-section">
+
+            <div class="text-center mb-4">
+
+                <h2 class="parking-section-title">
+                    Parking Slots
+                </h2>
+
+                <p class="text-muted">
+                    Check the availability of campus parking spaces
+                </p>
+
+            </div>
+
+
+            <!-- =================================================
+                 PARKING GRID
+                 ================================================= -->
+
+            <div id="parking-grid"
+                  class="parking-grid"
+                  style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; width: 100%; margin: 0;">
+
+
+                <!-- =================================================
+                      SLOT 1
+                      ================================================= -->
+
+                <div class="slot-col" style="min-width: 0; width: 100%;">
+
+                    <div id="slot-1"
+                         class="parking-slot card h-100">
+
+                        <div class="card-body text-center">
+
+                            <div class="slot-indicator"></div>
+
+                            <div class="slot-number">
+                                Slot 01
+                            </div>
+
+                            <h3 class="slot-category h5">
+                                Parking Slot 1
+                            </h3>
+
+                            <span id="slot-1-status"
+                                  class="slot-status status-badge badge">
+                                Waiting for sensor data
+                            </span>
+                            <div id="slot-1-vehicle" class="slot-vehicle" hidden aria-live="polite">
+                                <span aria-hidden="true">🚗</span> Car parked
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                      SLOT 2
+                      ================================================= -->
+
+                <div class="slot-col" style="min-width: 0; width: 100%;">
+
+                    <div id="slot-2"
+                         class="parking-slot card h-100">
+
+                        <div class="card-body text-center">
+
+                            <div class="slot-indicator"></div>
+
+                            <div class="slot-number">
+                                Slot 02
+                            </div>
+
+                            <h3 class="slot-category h5">
+                                Parking Slot 2
+                            </h3>
+
+                            <span id="slot-2-status"
+                                  class="slot-status status-badge badge">
+                                Waiting for sensor data
+                            </span>
+                            <div id="slot-2-vehicle" class="slot-vehicle" hidden aria-live="polite">
+                                <span aria-hidden="true">🚗</span> Car parked
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                      SLOT 3
+                      ================================================= -->
+
+                <div class="slot-col" style="min-width: 0; width: 100%;">
+
+                    <div id="slot-3"
+                         class="parking-slot card h-100">
+
+                        <div class="card-body text-center">
+
+                            <div class="slot-indicator"></div>
+
+                            <div class="slot-number">
+                                Slot 03
+                            </div>
+
+                            <h3 class="slot-category h5">
+                                Parking Slot 3
+                            </h3>
+
+                            <span id="slot-3-status"
+                                  class="slot-status status-badge badge">
+                                Waiting for sensor data
+                            </span>
+                            <div id="slot-3-vehicle" class="slot-vehicle" hidden aria-live="polite">
+                                <span aria-hidden="true">🚗</span> Car parked
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                      SLOT 4
+                      ================================================= -->
+
+                <div class="slot-col" style="min-width: 0; width: 100%;">
+
+                    <div id="slot-4"
+                         class="parking-slot card h-100">
+
+                        <div class="card-body text-center">
+
+                            <div class="slot-indicator"></div>
+
+                            <div class="slot-number">
+                                Slot 04
+                            </div>
+
+                            <h3 class="slot-category h5">
+                                Parking Slot 4
+                            </h3>
+
+                            <span id="slot-4-status"
+                                  class="slot-status status-badge badge">
+                                Waiting for sensor data
+                            </span>
+                            <div id="slot-4-vehicle" class="slot-vehicle" hidden aria-live="polite">
+                                <span aria-hidden="true">🚗</span> Car parked
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =====================================================
+         FOOTER
+         ===================================================== -->
+
+    <footer class="dashboard-footer text-center py-4">
+
+        <p class="mb-0">
+            Smart Campus Parking Management System
+        </p>
+
+    </footer>
+
+</div>
+
+
+<!-- Bootstrap JavaScript -->
+<script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+</script>
+
+<!-- =========================================================
+      REAL-TIME PARKING STATUS POLLING SCRIPT
+      ========================================================= -->
+<script>
+    // Theme Management
+    function initTheme() {
+        const savedTheme = localStorage.getItem('sps-driver-theme') || 'dark';
+        setTheme(savedTheme);
+    }
+
+    function toggleTheme() {
+        const currentTheme = document.body.classList.contains('driver-light') ? 'light' : 'dark';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        setTheme(newTheme);
+    }
+
+    function setTheme(theme) {
+        document.body.classList.remove('driver-light', 'driver-dark');
+        document.body.classList.add(theme === 'light' ? 'driver-light' : 'driver-dark');
+        const themeIcon = document.querySelector('.theme-icon');
+        if (themeIcon) {
+            themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+        localStorage.setItem('sps-driver-theme', theme);
+    }
+
+    function updateLastUpdatedLabel(message) {
+        const lastUpdated = document.getElementById('last-updated');
+        if (!lastUpdated) return;
+
+        const now = new Date();
+        const time = now.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+
+        lastUpdated.textContent = message || `${time} • live`;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        initTheme();
+
+        const themeToggle = document.getElementById('themeToggleBtn');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', toggleTheme);
+        }
+
+        fetchParkingStatus();
+        updateLastUpdatedLabel('Syncing system…');
+        setInterval(fetchParkingStatus, 3000);
+    });
+
+    async function fetchParkingStatus() {
+        try {
+            const response = await fetch('/api/parking/status', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP Error Status: ${response.status}`);
+            }
+
+            const status = await response.json();
+            if (!status || !Array.isArray(status.slots) || status.slots.length !== 4) {
+                throw new Error('Backend returned an invalid four-slot status response');
+            }
+            updateDashboardUI(status);
+            const lastUpdate = status.lastSuccessfulUpdate
+                ? new Date(status.lastSuccessfulUpdate).toLocaleTimeString()
+                : 'No valid sensor readings yet';
+            updateLastUpdatedLabel(lastUpdate);
+
+            const dataAlert = document.getElementById('parking-data-alert');
+            if (dataAlert) {
+                const unknownSlots = Number(status.unknownSlots || 0);
+                if (status.stale || !status.hardwareConnected) {
+                    dataAlert.hidden = false;
+                    dataAlert.textContent = 'ESP32 telemetry is stale or disconnected. Showing only the last known valid readings.';
+                } else if (unknownSlots > 0) {
+                    dataAlert.hidden = false;
+                    dataAlert.textContent = `${unknownSlots} slot sensor reading(s) are unknown; they are not counted as available.`;
+                } else {
+                    dataAlert.hidden = true;
+                }
+            }
+
+        } catch (error) {
+            console.error("Failed to update parking status:", error);
+            updateLastUpdatedLabel('Connection issue • retrying');
+            const dataAlert = document.getElementById('parking-data-alert');
+            if (dataAlert) {
+                dataAlert.hidden = false;
+                dataAlert.textContent = 'Backend unavailable. Last displayed readings are retained and may be stale.';
+            }
+        }
+    }
+
+    function updateReverseWarningUI(active) {
+        const banner = document.getElementById('reverse-warning-banner');
+        const state = document.getElementById('rw-state');
+
+        if (!banner || !state) return;
+
+        if (active) {
+            banner.classList.add('rw-alert');
+            state.classList.remove('rw-inactive');
+            state.classList.add('rw-active');
+            state.textContent = 'ACTIVE';
+        } else {
+            banner.classList.remove('rw-alert');
+            state.classList.remove('rw-active');
+            state.classList.add('rw-inactive');
+            state.textContent = 'INACTIVE';
+        }
+    }
+
+    function updateDashboardUI(status) {
+        const availableCount = Number(status.availableSlots || 0);
+        const occupiedCount = Number(status.occupiedSlots || 0);
+        const parkingFullBanner = document.getElementById('parking-full-banner');
+        if (parkingFullBanner) parkingFullBanner.hidden = !status.full;
+        updateReverseWarningUI(Boolean(status.slots[1]?.reverseWarning));
+
+        status.slots.forEach(slot => {
+            const slotId = slot.slotNumber;
+            const isOccupied = Boolean(slot.occupied);
+            const statusBadge = document.getElementById(`slot-${slotId}-status`);
+            const vehicleIndicator = document.getElementById(`slot-${slotId}-vehicle`);
+
+            if (statusBadge) {
+                const wasOccupied = statusBadge.classList.contains('status-occupied');
+                statusBadge.classList.remove('status-available', 'status-occupied', 'bg-secondary', 'bg-warning', 'text-dark');
+                const slotCard = statusBadge.closest('.parking-slot');
+                if (!slot.known) {
+                    statusBadge.textContent = 'Unknown';
+                    statusBadge.classList.add('bg-secondary');
+                    if (slotCard) slotCard.classList.remove('has-space', 'is-occupied');
+                } else if (isOccupied) {
+                    statusBadge.textContent = slot.sensorFresh ? 'Occupied' : 'Occupied · stale';
+                    statusBadge.classList.add('status-occupied');
+                    if (!slot.sensorFresh) statusBadge.classList.add('bg-warning', 'text-dark');
+                    if (slotCard) {
+                        slotCard.classList.remove('has-space');
+                        slotCard.classList.add('is-occupied');
+                    }
+                } else {
+                    statusBadge.textContent = slot.sensorFresh ? 'Available' : 'Available · stale';
+                    statusBadge.classList.add("status-available");
+                    if (slotCard) {
+                        slotCard.classList.remove('is-occupied');
+                        slotCard.classList.add('has-space');
+                    }
+                }
+
+                if (vehicleIndicator) {
+                    vehicleIndicator.hidden = !slot.known || !isOccupied;
+                    if (slot.known && isOccupied && !wasOccupied) {
+                        vehicleIndicator.classList.remove('vehicle-arrival');
+                        void vehicleIndicator.offsetWidth;
+                        vehicleIndicator.classList.add('vehicle-arrival');
+                    } else if (!isOccupied) {
+                        vehicleIndicator.classList.remove('vehicle-arrival');
+                    }
+                }
+            }
+        });
+
+        const availableCountElement = document.getElementById("available-count");
+        const occupiedCountElement = document.getElementById("occupied-count");
+        const availableCard = document.getElementById("available-card");
+        const occupiedCard = document.getElementById("occupied-card");
+        const capacityFill = document.getElementById("capacity-fill");
+        const capacityText = document.getElementById("capacity-text");
+        const capacityMessage = document.getElementById("capacity-message");
+
+        if (availableCountElement) {
+            const numberSpan = availableCountElement.querySelector('.count-number');
+            if (numberSpan) {
+                numberSpan.textContent = availableCount;
+            } else {
+                availableCountElement.textContent = availableCount;
+            }
+        }
+
+        if (occupiedCountElement) {
+            const numberSpan = occupiedCountElement.querySelector('.count-number');
+            if (numberSpan) {
+                numberSpan.textContent = occupiedCount;
+            } else {
+                occupiedCountElement.textContent = occupiedCount;
+            }
+        }
+
+        if (availableCard) {
+            availableCard.classList.toggle('card-alert', availableCount === 0);
+        }
+
+        if (occupiedCard) {
+            occupiedCard.classList.toggle('card-alert', occupiedCount === 0);
+        }
+
+        const occupancyPercent = Math.round((occupiedCount / 4) * 100);
+
+        if (capacityFill) {
+            capacityFill.style.width = `${occupancyPercent}%`;
+        }
+
+        if (capacityText) {
+            capacityText.textContent = `${occupancyPercent}% full`;
+        }
+
+        if (capacityMessage) {
+            if (status.full) {
+                capacityMessage.textContent = "PARKING FULL";
+            } else if (Number(status.unknownSlots || 0) > 0) {
+                capacityMessage.textContent = `${status.unknownSlots} slot sensor(s) unknown; counts exclude them`;
+            } else if (occupancyPercent === 0) {
+                capacityMessage.textContent = "All spots are free right now";
+            } else if (occupancyPercent >= 80) {
+                capacityMessage.textContent = "Parking nearly full - find a spot quickly!";
+            } else if (occupancyPercent >= 50) {
+                capacityMessage.textContent = "About half the parking is taken";
+            } else {
+                capacityMessage.textContent = "Plenty of parking available";
+            }
+        }
+
+        // Only run entrance animation on initial load
+        if (!document.body.classList.contains('animation-done')) {
+            document.body.classList.add('animation-done');
+            triggerEntranceAnimation(availableCount);
+        }
+    }
+
+    function triggerEntranceAnimation(count) {
+        document.querySelectorAll('.parking-slot').forEach((card, index) => {
+            card.style.animation = `slideInUp 0.5s ease forwards ${index * 0.1}s`;
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100 + 50);
+        });
+
+        const cards = document.querySelectorAll('.dashboard-card');
+        cards.forEach((card, index) => {
+            card.style.animation = `pulseIn 0.5s ease forwards ${index * 0.08}s`;
+            card.style.opacity = '0';
+        });
+    }
+</script>
+
+</body>
+
+</html>

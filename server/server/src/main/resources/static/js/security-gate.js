@@ -203,9 +203,11 @@ function updateUIForOffline() {
 }
 
 function updateGateControlButtons(commandState = gateCommandState) {
+    const token = document.getElementById('gateControlToken');
+    const authorized = Boolean(token && token.value.trim());
     const pending = String(commandState).toUpperCase() === 'PENDING';
-    const canOpen = gateControlEnabled && entryOpenAllowed && !parkingIsFull && !pending;
-    const canClose = gateControlEnabled && !pending;
+    const canOpen = gateControlEnabled && entryOpenAllowed && authorized && !parkingIsFull && !pending;
+    const canClose = gateControlEnabled && authorized && !pending;
     const openButton = document.getElementById('openActiveBtn');
     const closeButton = document.getElementById('closeActiveBtn');
     if (openButton) openButton.disabled = !canOpen;
@@ -272,15 +274,15 @@ async function controlBarrier(gate, action, buttonId) {
     }
 
     const endpoint = `/api/gates/${gate}/${action}`;
-    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
-    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
-    const headers = { 'Content-Type': 'application/json' };
-    if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+    const controlToken = document.getElementById('gateControlToken')?.value.trim();
 
     try {
         const response = await fetch(endpoint, {
             method: 'POST',
-            headers
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Gate-Control-Token': controlToken || ''
+            }
         });
 
         const result = await response.json();
@@ -464,6 +466,9 @@ function createRipple(event) {
 
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
+    fetchGateStatus();
+    const tokenInput = document.getElementById('gateControlToken');
+    if (tokenInput) tokenInput.addEventListener('input', () => updateGateControlButtons());
     fetchGateStatus();
     setInterval(fetchGateStatus, 3000);
     startVehicleSimulation();

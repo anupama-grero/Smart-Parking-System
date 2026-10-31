@@ -8,6 +8,9 @@ set "STATUS_URL=%BASE_URL%/api/parking/status"
 if exist "C:\Program Files\Eclipse Adoptium\jdk-17.0.19.10-hotspot" (
     set "JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-17.0.19.10-hotspot"
 )
+if not defined ESP32_SERIAL_PORT set "ESP32_SERIAL_PORT=COM3"
+if not defined ESP32_GATE_CONTROL_TOKEN set "ESP32_GATE_CONTROL_TOKEN=guard123"
+
 if not exist "%APP_DIR%\pom.xml" (
     echo Smart Parking backend was not found at "%APP_DIR%".
     pause
@@ -45,12 +48,12 @@ start "" "%BASE_URL%/security-guard"
 echo.
 echo Driver dashboard: %BASE_URL%/driver
 echo Security dashboard: %BASE_URL%/security-guard
-echo Configure ESP32_WIFI_BASE_URL=http://^<ESP32-LAN-IP^> and
-echo ESP32_GATE_CONTROL_TOKEN before starting this script to enable gate control.
-echo Configure the firmware SERVER_URL with this computer's LAN address and port 8080.
+echo The unchanged four-slot firmware has a fixed SERVER_URL:
+echo http://192.168.29.59:8080
+echo The ESP32 must be able to reach that address on port 8080.
 echo Current computer LAN address:
 powershell -NoProfile -Command "$configurations = Get-NetIPConfiguration; foreach ($configuration in $configurations) { if ($configuration.IPv4DefaultGateway) { $configuration.IPv4Address.IPAddress; break } }"
-echo Reserve a stable LAN IP for the ESP32 and set ESP32_WIFI_BASE_URL to that address.
+echo Do not edit the firmware. Use an appropriate static IP reservation or network route if the addresses differ.
 echo.
 pause
 exit /b 0

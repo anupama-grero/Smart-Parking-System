@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="_csrf" th:content="${_csrf.token}">
-    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <title>Security Guard Override Station | Smart Parking System</title>
     
     <!-- Modern Google Typography -->
@@ -156,28 +154,6 @@
             align-items: center;
             gap: 16px;
         }
-
-        .view-link, .logout-btn {
-            color: var(--text-primary);
-            font: inherit;
-            font-size: 13px;
-            font-weight: 700;
-            text-decoration: none;
-        }
-
-        .view-link:hover { color: var(--primary-blue); }
-
-        .logout-form { margin: 0; }
-
-        .logout-btn {
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 9px 12px;
-            background: var(--status-bg);
-            cursor: pointer;
-        }
-
-        .logout-btn:hover { border-color: var(--primary-blue); }
 
         .theme-toggle-btn {
             background: var(--status-bg);
@@ -838,13 +814,9 @@
                 <span class="brand-text-highlight">Smart Parking Station</span>
             </div>
             <div class="navbar-actions">
-                <a class="view-link" th:href="@{/driver}">Driver view</a>
                 <button id="themeToggleBtn" class="theme-toggle-btn" title="Toggle Theme" aria-label="Toggle Theme">
                     ☀️
                 </button>
-                <form class="logout-form" th:action="@{/logout}" method="post">
-                    <button class="logout-btn" type="submit">Sign out</button>
-                </form>
             </div>
         </header>
 
@@ -941,6 +913,12 @@
                     <div id="gate-command-status" class="instructions-text" aria-live="polite">
                         No confirmed gate command.
                     </div>
+                    <label for="gateControlToken" style="display:block;margin-bottom:8px;color:var(--text-secondary);font-size:12px;">
+                        Guard control token (required; kept only in this page)
+                    </label>
+                    <input id="gateControlToken" type="password" autocomplete="off"
+                           placeholder="Enter configured gate-control token"
+                           style="width:100%;padding:10px 12px;margin-bottom:12px;border:1px solid var(--status-border);border-radius:10px;background:var(--card-bg);color:var(--text-primary);">
                     <div class="btn-grid">
                         <button id="openActiveBtn" class="btn-action btn-primary" disabled onclick="openActiveGate()">
                             <span>🔓</span> Open Barrier

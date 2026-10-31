@@ -10,9 +10,6 @@ import com.smartparking.backend.service.BarrierService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Locale;
@@ -93,7 +90,8 @@ public class BarrierController {
 
     /**
      * Legacy HTTP command-polling endpoints retained for older clients. The
-     * active firmware reports gate state directly to the backend over Wi-Fi.
+     * active four-slot firmware uses USB serial commands and does not poll
+     * these routes.
      *
      * The firmware calls these every BACKEND_INTERVAL seconds and opens its
      * servo whenever the response body contains the word {@code OPEN}.
@@ -122,12 +120,6 @@ public class BarrierController {
     }
 
     private void authorizeGateControl(String token) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null
-                && authentication.isAuthenticated()
-                && authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_SECURITY_GUARD"))) {
-            return;
-        }
         if (!barrierService.isGateControlConfigured()) {
             throw new ResponseStatusException(
                     HttpStatus.SERVICE_UNAVAILABLE,

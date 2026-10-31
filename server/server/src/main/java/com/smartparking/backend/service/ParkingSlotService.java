@@ -183,7 +183,7 @@ public class ParkingSlotService {
     /**
      * Sets the reverse-manoeuvre warning flag for a slot.
      *
-     * Driven by ESP32 telemetry when the firmware reports an object behind
+     * Driven by the serial bridge when the firmware reports an object behind
      * the reverse-parking slot (slot 2).
      */
     @Transactional

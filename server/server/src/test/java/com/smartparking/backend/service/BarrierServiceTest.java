@@ -31,7 +31,7 @@ class BarrierServiceTest {
 
     private GateRepository gateRepository;
     private ParkingSlotRepository slotRepository;
-    private Esp32WifiService esp32Service;
+    private Esp32SerialService serialService;
     private SensorOccupancyService occupancyService;
     private BarrierService barrierService;
 
@@ -39,23 +39,22 @@ class BarrierServiceTest {
     void setUp() {
         gateRepository = Mockito.mock(GateRepository.class);
         slotRepository = Mockito.mock(ParkingSlotRepository.class);
-        esp32Service = Mockito.mock(Esp32WifiService.class);
+        serialService = Mockito.mock(Esp32SerialService.class);
         occupancyService = Mockito.mock(SensorOccupancyService.class);
         barrierService = new BarrierService(
-                gateRepository, slotRepository, esp32Service, occupancyService, "test-token", 10);
+                gateRepository, slotRepository, serialService, occupancyService, "test-token", 10);
 
-        when(esp32Service.isConnected()).thenReturn(true);
-        when(esp32Service.isConfigured()).thenReturn(true);
-        when(esp32Service.isControlConfigured()).thenReturn(true);
-        when(esp32Service.isGateStateConfirmed()).thenReturn(false);
-        when(esp32Service.getCommandState()).thenReturn("IDLE");
+        when(serialService.isConnected()).thenReturn(true);
+        when(serialService.isConfigured()).thenReturn(true);
+        when(serialService.isGateStateConfirmed()).thenReturn(false);
+        when(serialService.getCommandState()).thenReturn("IDLE");
         when(occupancyService.getLastSuccessfulBatchAt()).thenReturn(Instant.now());
         when(slotRepository.findAllByOrderBySlotNumberAsc()).thenReturn(availableSlots());
     }
 
     @Test
     void statusDoesNotPretendDisconnectedGateIsClosed() {
-        when(esp32Service.isConnected()).thenReturn(false);
+        when(serialService.isConnected()).thenReturn(false);
 
         GateStatusResponse response = barrierService.getGateStatus();
 
@@ -65,12 +64,12 @@ class BarrierServiceTest {
     }
 
     @Test
-    void requestRemainsPendingUntilWifiStatusConfirmsIt() {
-        when(esp32Service.getCommandState()).thenReturn("PENDING");
-        when(esp32Service.getCommandMessage()).thenReturn("OPEN command sent over Wi-Fi; waiting for firmware status.");
+    void requestRemainsPendingUntilSerialConfirmsIt() {
+        when(serialService.getCommandState()).thenReturn("PENDING");
+        when(serialService.getCommandMessage()).thenReturn("OPEN command sent; waiting for firmware status.");
         barrierService.controlBarrier(GateType.ENTRANCE, GateAction.OPEN);
 
-        verify(esp32Service).requestCommand(GateType.ENTRANCE, GateAction.OPEN);
+        verify(serialService).requestCommand(GateType.ENTRANCE, GateAction.OPEN);
         assertEquals("UNKNOWN", barrierService.getGateStatus().getEntryGate());
     }
 
@@ -80,7 +79,7 @@ class BarrierServiceTest {
 
         assertThrows(IllegalStateException.class,
                 () -> barrierService.controlBarrier(GateType.ENTRANCE, GateAction.OPEN));
-        verify(esp32Service, never()).requestCommand(any(), any());
+        verify(serialService, never()).requestCommand(any(), any());
     }
 
     @Test
@@ -89,21 +88,21 @@ class BarrierServiceTest {
 
         assertThrows(org.springframework.web.server.ResponseStatusException.class,
                 () -> barrierService.controlBarrier(GateType.ENTRANCE, GateAction.OPEN));
-        verify(esp32Service, never()).requestCommand(any(), any());
+        verify(serialService, never()).requestCommand(any(), any());
     }
 
     @Test
     void separateExitCommandIsNotInventedForSingleGateFirmware() {
         assertThrows(InvalidGateException.class,
                 () -> barrierService.controlBarrier(GateType.EXIT, GateAction.OPEN));
-        verify(esp32Service, never()).requestCommand(any(), any());
+        verify(serialService, never()).requestCommand(any(), any());
     }
 
     @Test
-    void disconnectedWifiCommandFailsExplicitly() {
-        when(esp32Service.isConnected()).thenReturn(false);
-        doThrow(new Esp32UnavailableException("ESP32 disconnected from Wi-Fi"))
-                .when(esp32Service).requestCommand(GateType.ENTRANCE, GateAction.CLOSE);
+    void disconnectedSerialCommandFailsExplicitly() {
+        when(serialService.isConnected()).thenReturn(false);
+        doThrow(new Esp32UnavailableException("serial disconnected"))
+                .when(serialService).requestCommand(GateType.ENTRANCE, GateAction.CLOSE);
 
         assertThrows(Esp32UnavailableException.class,
                 () -> barrierService.controlBarrier(GateType.ENTRANCE, GateAction.CLOSE));
